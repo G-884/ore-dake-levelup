@@ -1,0 +1,4731 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body style="margin:0">
+<title>俺だけレベルアップ</title>
+<style>
+/* =========================================================================
+ * 俺だけレベルアップ / style.css
+ * ダーク基調・スマホ片手操作前提
+ * ========================================================================= */
+
+:root {
+  --bg: #0a0d16;
+  --bg-2: #0f1421;
+  --panel: #161d2e;
+  --panel-2: #1d2639;
+  --panel-3: #262f45;
+  --line: #2a3450;
+  --line-soft: #202941;
+
+  --text: #e8edf8;
+  --text-2: #a4b0c8;
+  --text-3: #6d7a95;
+
+  --accent: #4dd9ff;
+  --accent-2: #2f8fff;
+  --accent-dim: rgba(77, 217, 255, 0.12);
+  --gold: #ffc861;
+  --danger: #ff5d6c;
+  --ok: #3fd1a0;
+
+  --str: #ff5d6c;
+  --vit: #ffb648;
+  --end: #3fd1a0;
+  --agi: #4ea8ff;
+  --dex: #b07cff;
+
+  --radius: 14px;
+  --radius-s: 10px;
+  --nav-h: 60px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+               "Noto Sans JP", "Yu Gothic UI", "Segoe UI", Meiryo, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-image:
+    radial-gradient(1000px 520px at 50% -180px, rgba(47, 143, 255, 0.18), transparent 70%),
+    radial-gradient(600px 400px at 110% 10%, rgba(176, 124, 255, 0.10), transparent 70%);
+  background-attachment: fixed;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+button { cursor: pointer; }
+
+/* ---------------- レイアウト ---------------- */
+#app { display: flex; flex-direction: column; min-height: 100dvh; }
+
+.appbar {
+  position: sticky; top: 0; z-index: 30;
+  padding: calc(var(--safe-top) + 10px) 16px 10px;
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(180deg, rgba(10,13,22,0.96), rgba(10,13,22,0.72));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.appbar h1 {
+  margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .04em;
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.appbar .lvchip {
+  font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  padding: 4px 10px; border-radius: 999px;
+  color: var(--gold); background: rgba(255, 200, 97, .10);
+  border: 1px solid rgba(255, 200, 97, .28);
+}
+.appbar .barback {
+  background: none; border: none; padding: 4px 6px 4px 0; color: var(--accent);
+  font-size: 14px;
+}
+
+main {
+  flex: 1;
+  padding: 14px 14px calc(var(--nav-h) + var(--safe-bottom) + 92px);
+  max-width: 720px; width: 100%; margin: 0 auto;
+}
+
+/* ---------------- カード ---------------- */
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card.tight { padding: 12px; }
+.card-title {
+  font-size: 12px; font-weight: 700; letter-spacing: .12em;
+  color: var(--text-3); text-transform: uppercase; margin: 0 0 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--text-2);
+  margin: 18px 2px 8px; letter-spacing: .06em;
+}
+
+/* ---------------- ホーム: レベル ---------------- */
+.hero { text-align: center; padding: 20px 16px 18px; }
+.hero .lv-label { font-size: 11px; letter-spacing: .3em; color: var(--text-3); }
+.hero .lv-value {
+  font-size: 62px; font-weight: 900; line-height: 1; letter-spacing: -.02em;
+  background: linear-gradient(180deg, #fff, var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 40px rgba(77, 217, 255, .25);
+  font-variant-numeric: tabular-nums;
+}
+.hero .lv-value small { font-size: 22px; font-weight: 800; }
+.hero .exp-text {
+  margin-top: 10px; font-size: 13px; color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.hero .exp-text b { color: var(--text); }
+
+.expbar {
+  height: 10px; border-radius: 999px; background: var(--panel-3);
+  overflow: hidden; margin-top: 8px; border: 1px solid var(--line);
+}
+.expbar > i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  box-shadow: 0 0 14px rgba(77, 217, 255, .55);
+  transition: width .6s cubic-bezier(.2,.8,.2,1);
+}
+
+/* ---------------- ステータス ---------------- */
+.stats { display: flex; flex-direction: column; gap: 10px; }
+.stat-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.stat-name { font-size: 12px; font-weight: 800; letter-spacing: .08em; width: 84px; color: var(--text-2); }
+.stat-name .ja { display: block; font-size: 10px; font-weight: 600; color: var(--text-3); letter-spacing: .02em; }
+.stat-bar { height: 8px; border-radius: 999px; background: var(--panel-3); overflow: hidden; }
+.stat-bar > i { display: block; height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.stat-val { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+
+.stat-STR .stat-bar > i, .dot-STR { background: var(--str); }
+.stat-VIT .stat-bar > i, .dot-VIT { background: var(--vit); }
+.stat-END .stat-bar > i, .dot-END { background: var(--end); }
+.stat-AGI .stat-bar > i, .dot-AGI { background: var(--agi); }
+.stat-DEX .stat-bar > i, .dot-DEX { background: var(--dex); }
+.stat-STR .stat-val { color: var(--str); }
+.stat-VIT .stat-val { color: var(--vit); }
+.stat-END .stat-val { color: var(--end); }
+.stat-AGI .stat-val { color: var(--agi); }
+.stat-DEX .stat-val { color: var(--dex); }
+
+/* 大きいステータス表示（ステータス画面） */
+.stat-big { margin-bottom: 18px; }
+.stat-big .top { display: flex; align-items: baseline; justify-content: space-between; }
+.stat-big .nm { font-size: 15px; font-weight: 800; letter-spacing: .1em; }
+.stat-big .nm span { font-size: 11px; color: var(--text-3); margin-left: 8px; letter-spacing: 0; }
+.stat-big .vl { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.stat-big .stat-bar { height: 12px; margin-top: 6px; }
+.stat-big .sub { font-size: 11px; color: var(--text-3); margin-top: 5px; }
+
+/* ---------------- 指標行 ---------------- */
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.metric {
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-s); padding: 10px 8px; text-align: center;
+}
+.metric .v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.metric .k { font-size: 10px; color: var(--text-3); letter-spacing: .08em; margin-top: 2px; }
+.metric.flame .v { color: var(--gold); }
+
+/* ---------------- ボタン ---------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  border-radius: var(--radius-s); padding: 12px 16px; font-weight: 700; font-size: 14px;
+  transition: transform .08s ease, background .15s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn.block { width: 100%; }
+.btn.primary {
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  border-color: transparent; color: #05121c;
+  box-shadow: 0 6px 22px rgba(47, 143, 255, .35);
+}
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--danger); border-color: rgba(255,93,108,.35); background: rgba(255,93,108,.08); }
+.btn.small { padding: 8px 12px; font-size: 13px; border-radius: 8px; }
+.btn.big { padding: 18px; font-size: 17px; border-radius: var(--radius); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+
+.btn-row { display: flex; gap: 8px; }
+.btn-row > * { flex: 1; }
+
+/* 記録するボタン（ホーム） */
+.record-cta {
+  position: relative; width: 100%; padding: 20px; font-size: 19px; font-weight: 900;
+  letter-spacing: .08em; border-radius: 18px; border: none; color: #05121c;
+  background: linear-gradient(135deg, #7ef0ff, var(--accent) 40%, var(--accent-2));
+  box-shadow: 0 10px 30px rgba(47, 143, 255, .4);
+}
+.record-cta:active { transform: scale(.98); }
+
+/* FAB */
+.fab {
+  position: fixed; right: 16px; z-index: 40;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+  width: 58px; height: 58px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg, #7ef0ff, var(--accent-2));
+  color: #05121c; font-size: 28px; font-weight: 800; line-height: 1;
+  box-shadow: 0 8px 26px rgba(47, 143, 255, .45);
+  display: flex; align-items: center; justify-content: center;
+}
+.fab:active { transform: scale(.94); }
+
+/* ---------------- ボトムナビ ---------------- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  display: flex;
+  background: rgba(11, 15, 25, .92);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line-soft);
+}
+.tabbar button {
+  flex: 1; background: none; border: none; color: var(--text-3);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 0;
+}
+.tabbar button .ic { font-size: 19px; line-height: 1; }
+.tabbar button.active { color: var(--accent); }
+
+/* ---------------- リスト ---------------- */
+.list { display: flex; flex-direction: column; gap: 8px; }
+.row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-s); padding: 12px;
+  text-align: left; width: 100%;
+}
+.row .icon {
+  width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px;
+  background: var(--panel-3); display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.row .body { flex: 1; min-width: 0; }
+.row .body .t { font-weight: 700; font-size: 14px; }
+.row .body .s { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.row .end { text-align: right; font-variant-numeric: tabular-nums; }
+.row .end .exp { font-size: 14px; font-weight: 800; color: var(--accent); }
+.row .end .sub { font-size: 10px; color: var(--text-3); }
+.row.tappable:active { background: var(--panel-3); }
+
+.chip {
+  display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 999px; margin-left: 6px;
+  background: rgba(255, 200, 97, .14); color: var(--gold); border: 1px solid rgba(255,200,97,.3);
+}
+
+.empty {
+  text-align: center; color: var(--text-3); font-size: 13px; padding: 28px 12px;
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+
+/* ---------------- 種目選択グリッド ---------------- */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.act-tile {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 10px; text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.act-tile:active { background: var(--panel-3); transform: scale(.97); }
+.act-tile .em { font-size: 26px; line-height: 1; }
+.act-tile .nm { font-size: 13px; font-weight: 700; }
+.act-tile .pb { font-size: 10px; color: var(--text-3); }
+.act-tile.selected { border-color: var(--accent); background: var(--accent-dim); }
+
+/* ---------------- フォーム ---------------- */
+.field { margin-bottom: 14px; }
+.field > label {
+  display: block; font-size: 12px; font-weight: 700; color: var(--text-2);
+  margin-bottom: 6px; letter-spacing: .04em;
+}
+.hint { font-size: 11px; color: var(--text-3); margin-top: 5px; line-height: 1.6; }
+input[type="text"], input[type="number"], input[type="date"], input[type="search"], select, textarea {
+  width: 100%; padding: 13px 12px; border-radius: var(--radius-s);
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+  font-size: 16px; /* iOSで自動ズームさせない */
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); background: var(--panel-3); }
+input[type="number"] { font-variant-numeric: tabular-nums; font-weight: 700; }
+textarea { min-height: 72px; resize: vertical; font-size: 15px; }
+select {
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%),
+                    linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.inline-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.inline-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.unit-suffix { position: relative; }
+.unit-suffix > span {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: var(--text-3); pointer-events: none; font-weight: 600;
+}
+.unit-suffix input { padding-right: 44px; }
+
+.quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.quick button {
+  background: var(--panel-3); border: 1px solid var(--line); color: var(--text-2);
+  border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: 700;
+}
+.quick button:active { background: var(--accent-dim); color: var(--accent); }
+
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--line-soft);
+}
+.switch-row:last-child { border-bottom: none; }
+.switch-row .lb { font-size: 14px; font-weight: 600; }
+.switch-row .sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.switch-row .ctl { flex: 0 0 auto; }
+.switch-row .ctl input[type="number"] { width: 96px; text-align: right; }
+.switch-row .ctl select { width: auto; min-width: 120px; }
+
+.toggle { position: relative; width: 50px; height: 29px; flex: 0 0 50px; }
+.toggle input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; z-index: 2; }
+.toggle .track {
+  position: absolute; inset: 0; border-radius: 999px; background: var(--panel-3);
+  border: 1px solid var(--line); transition: background .2s;
+}
+.toggle .knob {
+  position: absolute; top: 3px; left: 3px; width: 23px; height: 23px; border-radius: 50%;
+  background: var(--text-3); transition: transform .2s, background .2s;
+}
+.toggle input:checked ~ .track { background: rgba(77,217,255,.25); border-color: var(--accent); }
+.toggle input:checked ~ .knob { transform: translateX(21px); background: var(--accent); }
+
+/* ---------------- カレンダー ---------------- */
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-head .m { font-size: 16px; font-weight: 800; letter-spacing: .04em; }
+.cal-head button { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; width: 36px; height: 32px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { font-size: 10px; text-align: center; color: var(--text-3); padding: 2px 0; font-weight: 700; }
+.cal-dow.sun { color: #ff8a95; } .cal-dow.sat { color: #7fb6ff; }
+.cal-cell {
+  aspect-ratio: 1 / 1; border-radius: 9px; background: var(--panel-2);
+  border: 1px solid var(--line-soft); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; font-size: 12px; color: var(--text-3);
+  position: relative; padding: 0;
+}
+.cal-cell.blank { background: transparent; border-color: transparent; }
+.cal-cell.has { color: #06131c; font-weight: 800; }
+.cal-cell.lv1 { background: rgba(77,217,255,.30); border-color: rgba(77,217,255,.4); color: var(--text); }
+.cal-cell.lv2 { background: rgba(77,217,255,.55); border-color: rgba(77,217,255,.6); color: #041420; }
+.cal-cell.lv3 { background: linear-gradient(135deg, #7ef0ff, var(--accent-2)); border-color: transparent; color: #041420; }
+.cal-cell.today { box-shadow: 0 0 0 2px var(--gold) inset; }
+.cal-cell .cnt { position: absolute; bottom: 2px; font-size: 8px; opacity: .8; }
+.cal-legend { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 8px; font-size: 10px; color: var(--text-3); }
+.cal-legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+/* ---------------- グラフ ---------------- */
+.chart { width: 100%; height: 180px; display: block; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--text-3); margin-top: 6px; }
+
+/* ---------------- モーダル / シート ---------------- */
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60; background: rgba(4, 7, 14, .72);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadein .18s ease;
+}
+.sheet {
+  width: 100%; max-width: 720px; max-height: 92dvh; overflow-y: auto;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 20px 20px 0 0; padding: 8px 16px calc(24px + var(--safe-bottom));
+  animation: slideup .24s cubic-bezier(.2,.9,.3,1);
+  -webkit-overflow-scrolling: touch;
+}
+.sheet .grip { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 8px auto 14px; }
+.sheet h2 { margin: 0 0 14px; font-size: 17px; font-weight: 800; }
+.sheet .sheet-actions { display: flex; gap: 8px; margin-top: 18px; }
+.sheet .sheet-actions > * { flex: 1; }
+
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideup { from { transform: translateY(22px); opacity: .6; } to { transform: none; opacity: 1; } }
+
+/* ---------------- 記録結果オーバーレイ ---------------- */
+.result-backdrop {
+  position: fixed; inset: 0; z-index: 70; background: rgba(4, 7, 14, .86);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: fadein .2s ease;
+}
+.result {
+  width: 100%; max-width: 380px; text-align: center;
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  border: 1px solid var(--line); border-radius: 20px; padding: 26px 20px 20px;
+  animation: pop .3s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+.result .exp {
+  font-size: 46px; font-weight: 900; color: var(--accent); line-height: 1.05;
+  text-shadow: 0 0 30px rgba(77,217,255,.45); font-variant-numeric: tabular-nums;
+}
+.result .exp small { font-size: 18px; margin-left: 4px; }
+.result .actname { font-size: 13px; color: var(--text-2); }
+.result .growths { margin: 16px 0 4px; display: flex; flex-direction: column; gap: 5px; }
+.result .growths div { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
+.result .banner {
+  margin: 14px 0 0; padding: 11px; border-radius: 12px; font-weight: 900; letter-spacing: .08em;
+}
+.result .banner.pb { background: linear-gradient(135deg, rgba(255,200,97,.22), rgba(255,200,97,.08)); color: var(--gold); border: 1px solid rgba(255,200,97,.4); }
+.result .banner.lvup { background: linear-gradient(135deg, rgba(77,217,255,.25), rgba(47,143,255,.1)); color: var(--accent); border: 1px solid rgba(77,217,255,.45); }
+.result .streak { margin-top: 12px; font-size: 14px; color: var(--gold); font-weight: 800; }
+.result .bonus-note { font-size: 11px; color: var(--text-3); margin-top: 8px; }
+
+/* ---------------- トースト ---------------- */
+#toast-host {
+  position: fixed; left: 0; right: 0; z-index: 90; display: flex; flex-direction: column;
+  align-items: center; gap: 8px; pointer-events: none;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 84px);
+}
+.toast {
+  background: var(--panel-3); color: var(--text); border: 1px solid var(--line);
+  border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 700;
+  max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  animation: toastin .2s ease;
+}
+.toast.err { border-color: rgba(255,93,108,.5); color: #ffc0c6; background: rgba(60, 20, 26, .96); }
+.toast.ok { border-color: rgba(63,209,160,.45); color: #b6f2dd; }
+@keyframes toastin { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------------- 起動エラー画面 ---------------- */
+.boot-error { padding: 30px 20px; max-width: 560px; margin: 0 auto; }
+.boot-error h2 { color: var(--danger); font-size: 18px; }
+.boot-error p { color: var(--text-2); font-size: 14px; line-height: 1.7; }
+.boot-error .note {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px; font-size: 12px; color: var(--text-3); margin: 14px 0;
+}
+
+/* ---------------- その他 ---------------- */
+.muted { color: var(--text-3); font-size: 12px; }
+.right { text-align: right; }
+.center { text-align: center; }
+.mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; } .mb8 { margin-bottom: 8px; }
+.nowrap { white-space: nowrap; }
+.warnbox {
+  background: rgba(255,93,108,.09); border: 1px solid rgba(255,93,108,.3);
+  color: #ffc6cc; border-radius: 10px; padding: 11px; font-size: 12px; line-height: 1.6;
+}
+.okbox {
+  background: rgba(63,209,160,.09); border: 1px solid rgba(63,209,160,.3);
+  color: #b6f2dd; border-radius: 10px; padding: 11px; font-size: 12px; line-height: 1.6;
+}
+.errlist { margin: 0; padding-left: 18px; }
+
+.kv { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
+.kv:last-child { border-bottom: none; }
+.kv .k { color: var(--text-3); }
+.kv .v { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+
+@media (min-width: 560px) {
+  .grid-2 { grid-template-columns: repeat(3, 1fr); }
+}
+
+</style>
+<div id="app">
+  <div class="boot-error">
+    <h2 style="color:var(--text-2)">読み込み中…</h2>
+    <p>この画面のまま変わらない場合は、ページを再読み込みしてください。</p>
+  </div>
+</div>
+<script>
+window.ODL_DISABLE_SW = true;
+(function () {
+  try {
+    var link = document.createElement('link');
+    link.rel = 'apple-touch-icon';
+    link.href = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAARcklEQVR42u2dW69kRRXHa+10IggkmPHyIiGAEXkzxm8wEwVF/QKEq+DoOCAOM8CHMNEnUaOi4QvoAANz5jQwcWA0DpoZCaIM4qfw7Swfuk937dqrVq1VVfvS3WtlP5zTva9Vv/1fl6q9G2793D1uYeBWBv4/y4+CTyDyFbBbtT4HYifJ45Irg/dN/GSY85Gv4JxD1K+D3jdIfY7RnROHC1fGxSfMidEH5c6zuzd02F13troeoHdz2KySVnPQ3ZTqo+XeMNx/Z/P1caF9kPXKAP5WsLycJQcYkoTUKTvmygWG/Edkl5A8YfdLMUNI0SkAmgEo9e3iy4a68UAASveW1d7uINYe6GwEHb2Bzg6DbSDcD/h7g3CFxJl76xObAqmOjjpb6F4mxJpI03pCB8I4Fr7fDzedCZoLXIZFtgL1BQvp4dGhW4A6bCPwTgfUTtD/0/sKvT8Oz3Atq0sRxfYnnhbDesOEEwDn0NsV1aSI6k5MbTLTEyKTH44elw59Sulh0IEMaGLrezB1SOIxymAoFjC0u5ljSLC5MA5ZNfksERRUlR+l8+qXnig3yUtu9VZDkYSdjlj9A/kMEXoQ7C3V9xVEKDzETItGsfzo86ASeoTo8LlbEEj6K69SEGg8jCAiRSUMCQlIObLaItQow+d6Jnde9egBaFr0ACwXRRwdRNCrPXT3z0AMsZsQorclyOR8iJ5rATRM+KyUH4hIXgY9fr7TQaebnflMkIuLZFttjMIVMhmi+ANRjgxsBa5iQNJkoqf0X0r5IZxXPADn6YkID9n9BCLUmYdrEhUEQopEDEXuN5D1S84Nn5fPt2IgrCpvQJUhZT51uVro9jvbHkaUrTohtuKGVmDRrNeETrk0LDnqGz8o8nofAoAXXGP7Utr1QwhLgtQf/n5iJb71TgAidUWIFaZRVA5t/9tUzr9Kki9O7xjBS2hPVPYkeiO8Z+K+VaFDUkdWo21LvRhkuLB6/kvh1EB3PRAv8HTp4U6moRdV5ROATvpAe8dSF1vz9i7yYk2fnGrC5yL5ITomh54kKPwKaYZiMU0VEeo5lB4CoGylUV1P2E+p+0ZCTxcLPgWLYSQdXYk4ssx2GCufzykkDlJgoJMvENcmuqXCeON2uVluAJ0ColdCXI75N8451xoaI8qDq1NqDaIl8oqgtBjUFaFy6lNDgcBthJHyA0n5EdAD4GCtNlSXel/5gpSoaycjtgIRmsDdPouM00H7c6C+gqlcBQZd4N0V6HUMdujB1kWBY2lbT5wCXA1KLD9sQh1yweDUYoThUITYSTiKf2MypF3HP8/omAY9itL0oA1MQYwJgDILWblnG4bYkEzv/Vpz1ydCM8wdz8oV0c59x9GNm5ox+RfvGgC46IflHsggiQ6f4wwJOn55eoILqZSLDRFE4yQJSo85d1oUO/7ML0BjG0SMwIRcWLNwQLGq8Tp85ovLpE8i1+FrxMh6OGYd3tXp6tHTU6DBQ3II5C0cCvWHupq0bu2YzXCX+eFuT4hrXiokZa3OtP0BN9+0GMhso8wAEt63aC1iALGsrIoc/gSM9dL+CtGo2iWAgof3MPIYns9QUBj0P+k+solIUIVoAG2ijhywOXPKYfm9voAmgAlR6dRa69OVaAOoN+GglaP9L+aBRh9i8RUpHq3PMSE/ed6Tui6ctpJVLyRCQACA8x6rWzVT+8mY9WTW1b/5R0c8AOgcrrvbw08QEQDCE+O6LUaPiz2yfrhubLqqporo7xn5oh9GrgMj6yezB3khUfSeh/iFpbftO9ZhzpBwWO2uxchVhF+l6ImcyQCKIqGfnBYtfb8H4cJQk9NOIRzmqO3c68gxtHhVCGLnxStIJGIrMVlsyNETRD+Y8l8TDL3TIDYTP11EibRK7iGyg2mMYmHH+tsQHZSG2NwKhCREzmRCkDXEnTbEgq1/D9h/gyW58gE6dLj+3PtjjYsLP1xh1Cbp+fkbITfhJi6x/9XJRE5VeuHBCuHKOEpXNn0LyfolWrkSrRYhZkNyV9206xCU5+dvIrrn529G1xHEFsiHRGr5EXp5MoLGHhSovC5XxX+rqnB8ep/M0ruupy0/iUMT6AjoSdIsObR8ZUUoWVT5bAQ5Sy1483eIGbGFtNKDxIUjOsTn5m+taHlu/haFF8arR3J66FZSyk8fI3eiVyn2FEQjiyKWiRCKbug2Q7jeOYPR+tvn3rgYHPXwk+4AGSFIrUg8QY+sDimUH8R4M/cSejfFGljixfJEyAk6huhdFAZADp+dX/Qj5tXy7PwiGwZRwqOgh73YikWWev4rVYkOq7eYPSN3VfVNlJujVWnw6trkfuKftIvOrvWyB6ruzNfBw6cv4vGyLMTuEobRt7RiokrJhc8FBWg2CWja39ZQOcwaxRQ0Ctu4ilSr49Fa53Bm/0+k/CyWM/NLZHk69Fk90ZMvPxXnCGANF+bU49LSfD4dXWoZwkiIgF2STs8vJWsfp+eXAm5Y4SmjR9o4Sfnpi6omQXRRLia8aVAcTecx5Ph0fQXB6f23hdWz0/tvE9zEhKeEHqHz0jV4nfxrGQNhyfg3GXDEQ5xOTBXZvBt1eWvCMh5abcHGQy54hRTxfkznBVbqNk4ONZAdEH87PcboER+FHUjFuvKDokp0VRHSO7LI70K4yE8CSNP1MJk6s/+OqoR/Zv+dSFmIS+8jeZmAnnznVVF+4i4sP5RO5/OFjkzOkGi4lOzs0/PLGQNBp+eXaShjpWr6xPLo0TuvCvIT/62MSiIkqgnF64qFDDG1Zq5y88z+ZSbt4pdn9i9LKkPx8ymmp8R5FcsPA1CeCJU7sioMxTwahgEvVipbRAfIkBs2qUZPrvOqUa5spHsrFSHVNJ0shtIYEeuduvDnbPlZLKf2/0JFQi6BTlV6cpxXmfysM5BbjtwVr8HKXpQUfiv9RRXgftdI8OtPre1jP8nDXcWp/b+6SvaTo18V3WktilBWvEjTw8kPymfeKbL31fczLs1OZeGR1D2VkxP7YwciiP279fuOlkMkuMYoTNjpUYsfz6/UHF1MxrlydCrSo6gc5shPMohWBjf6jExUEqRDVKR2QbsJMlcq9FzB8vT+lWilAJXCU5EeaeaVPyO+SUy9yA+7+mGITIb9ca7l1M4YRsuPvP6uZk/vXyFUp40OEikhppLqqvQUp0TB93DLkTvZ6MQ51Q/wauOYvHiIOI1UYOSt9aML77re7KfHvkJIZ47PqkhPifNK6EtTqGC6zKuiDjH63FajQJB6pacb60RUZ5L0ZHV9kyNjKC8wVGRI8rgxmUK3OrJu6NNdnrrwLsFN6LBSj1HTkwiq01PkvIIgGtm1kz9mjrUY8mqMbA2Xq/+2t/W+eqpv+XELF/k3osyYGO6I0+BtG9kom54i57V85/ktR+6MRTOJspAT/DxHVjyUCokcNzEy/gvZT134uxvQfnbsy7J7LxkMsAP/g9Dj4jOsuSmtiA66P7CVcJlM8Ub8VevQ7VaIzc0gSqStt7c+eeHq4I9zHqjCgkR35c0bkdAj6Fnm0bYmxZ32ZQl1fJkjHlYnA2d2kgMiUQYaanly76rAWzl6ekmyHSrSg/n0uPSMxEEZQtHZM8/1RTA6uXd1lAe4T+5dVaPToUccYo9Aj6vzXFg1hpRSJMPo5N61kZ7/dw7dyb1r2ehgDgE16ZHYTBLKeK9g4sIlTTzkiNml7FAafQ6tDYk9/3Dv2sTe7yWKqRG1Y+ySwpKaHslT/dL5QJhTRVCKjcCdIfPyOaog1HfVR7KcOH8tOmuRCpaL3Naw9DjnGlE1YkiGUlUf5v09QZecOH9tIrJz4vw/khUg7rpSkyrHosc5N0PusYy+fVkkIW87O4h4tGjhB9E5d2LvvUm97AsP9I96RQfRVGT0SI9DTAbRvemQWIqIYQE2/HTOnTj/3oiBM7mcOP+e5Mx9dFAlPMPT04qBNHdrLkP6oo4Wo/Y4yNSWHywYSk3HlqEjcVtV6En0Mtz8qdvXH0l/unyxruBhRADJrkTDFPw8Dc++f/59N2H7+dfuyXVYwognM13XvY8RyUo0Kp6NFdEq1ENJRUemRhOnp0B1hMIzKD0dBRpOhyRS5GRTydaCdPz1zaDnha/fQ0tOaSCsGritQE+kDtSHDsmlSKlGjpy3NW07/vr78QlDKdWRC0//9EQUKKFDjpqQKns5g1yK5Gp0uObx1/65WW7rhXu/VMkTZQqPOufS/ey35oyl0bsWduGgKeLG0ZPKvVGsJWPSwyqQXof6kqJUNve91z5wm2m/uPfuAhTqopNDj0uPxqvYV0mRsFYkqIXgxi5PLNFHZQSD2RFPXXoECtSrDikzPnKrJ879y224/fK+L4olBLUd3Cs9Tvp7Ydwzz+SEVJRiFM7HCC4J+K0eP/fvrfjxPxwPnSJ6Fgp0m/TlvQkgyqRIr0aPn/vQbYv96r4v9IdOjvA43fuBSgKXREikGF5JZCUY+3QLlu8SNwMmxweF6OS4LekhcMZ4oix35kiPppCiqFNr7f+xVz/c3l9FxhJJGEZ4VvuBm2+9TRq6lrkztUeLH+ixV69vJTi//sZdVbjJjHhczsszAoAqMtQXRo9uKT0L+43P0JDouMxXrzTqwyg8pX5OKn+s5Y/cbvPy6CvXs9/fKJ0UWxT0hLsSPZWRGxJx2bgi1ffskVeuozOTq05d4SH21nVhWe6swKPJMXr4lY92BIgXv3nn9NFZ9t1NHEDDMZTE6JGdoWdhv00xhFj2ap9KP0k2E7xiqEoGnvBoSaeGO+a6Hn75oxfvv2MC6CR2OBNvPyhGAUkPv/wfC3Qwb7ijN3RWLuzzchdVXsLR7hMAHjq7u/T87lt31EGnH3qc8uUKWbl3ep/c6zV2mZ7F5WN6XgfW6IjMvm70++0DIxd/Hn7Xl4fOfpzfEZnoKDaZZd0Y+l/fTQdGRHj04NmPreqTqQ2ZSYd6K1UMVBwVKWIj9+Af/2uwrOz3375dd6/2j04VgHrHKO8Q3VrAA38YOpZ66Tt3ZGVSBf06LDolLqzYoznybZiSiwTZvrFqK/WXeI/ITZ12mdVqq3wpkoZH3QuG4dppCHow/yYcA51DgGqWeFUoxNoCcpogddAxCtnYGwFYiHbFi5z1cevlY6T3VkSjkIeeTjo3jF8b6jaa9dtM+RjlkkQ2EwBuHi5V2e9NgWdDNF8RRgUk+aeBG4cOTobgEQGqiVF+BD0pDzbcaQ4S981GuCMrkKSGacKzQbCvdh7EZmO0GNbDiOwDcJM27P0W3XKAehEkvodgPAXC4VpyDJtN4IbEfjAaPQTacnRWAE0jOuhRkMZqatxibtYATS64REV9eYcinalmAbNpd0I1WdrUOfmTP+/Z5rVjFkxo0Ow0QOUwoUFjACXbPc4TGjEGUGavLKhCY6UngLZ+2jriOJ14sBMPBMzcbpg93WEAGUETBQiNH2PWFMh60wAyfgygzUrwzcqtsSYwMwUyBTIFMjMFMgUyBTIzUyvQbhQSt2lKq7kw60wDyAgyMwUyKwdoV9KTwS9zRxrW0ngzA8hcmAFkBBlAxo8BZASZ6QGyKa3GrCmQZWEjmQ2mmpkCmQKZApmZApkCmQKZmZkCmQIZQD0AZF1tABlBkwQIbU60eU0Los3MhZkcGEAWAhlARpCZCiCbU2/EmgJZfxpAxs9mGtxw82etFcxKFMhuTrN8s0KimQFkZgCZGUBmlsb3b/+7cL81et9247GXt1OBjJ7ta2e44abPDHRV+0bPsDp0dAgdshjIzAAyGzWItkr0ttoQPTucAt149Kx16fa1drOVV2X0DJmFfdpa3MyCaDMDyMwAMtu5NN6SeDNTILPxFGj6hcQH7rt7l3vopXMfmAIZPVvbAo21nTFkMZDZiDGQpWEbYVPtJlMgs+0F6KVXP7Aemng7NNZ21gIlBp/45BG7xc0sBjIbKwuzNMzMFMjMADIzgMwMIDMzA8jMADIzgMwMIDOzhP0fkLtNcN/VgxMAAAAASUVORK5CYII=';
+    document.head.appendChild(link);
+    var meta = document.createElement('meta');
+    meta.name = 'theme-color'; meta.content = '#0a0d16';
+    document.head.appendChild(meta);
+  } catch (e) {}
+})();
+/* ===== js/config.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / config.js
+ * アプリ全体の定数・初期設定値・初期マスタ。
+ * ここに書かれた数値は「設定値」であり、計算式やUIにハードコードしない。
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+
+  ODL.APP_NAME = '俺だけレベルアップ';
+  ODL.APP_VERSION = '0.1.0';
+
+  /* 保存データのスキーマバージョン。構造を変えたら +1 して migration を足す */
+  ODL.CURRENT_SCHEMA_VERSION = 1;
+  /* 計算式のバージョン。記録に焼き込む（過去記録がどの式で計算されたか分かる） */
+  ODL.CALC_VERSION = 1;
+
+  ODL.STORAGE_KEY = 'ore_dake_levelup:data';
+  ODL.AUTO_BACKUP_PREFIX = 'ore_dake_levelup:autobackup:';
+  ODL.AUTO_BACKUP_KEEP = 5;
+  ODL.BACKUP_FILE_PREFIX = 'ore_dake_levelup_backup_';
+
+  ODL.STATS = ['STR', 'VIT', 'END', 'AGI', 'DEX'];
+
+  ODL.STAT_LABELS = {
+    STR: '筋力',
+    VIT: '体力',
+    END: '持久力',
+    AGI: '敏捷性',
+    DEX: '身体操作'
+  };
+  ODL.STAT_LABELS_LONG = {
+    STR: '筋力',
+    VIT: '体力',
+    END: '持久力',
+    AGI: '敏捷性',
+    DEX: '身体操作・柔軟性'
+  };
+  ODL.STAT_COLORS = {
+    STR: '#ff5d6c',
+    VIT: '#ffb648',
+    END: '#3fd1a0',
+    AGI: '#4ea8ff',
+    DEX: '#b07cff'
+  };
+
+  ODL.INPUT_TYPES = {
+    reps:        { label: '回数のみ',        fields: ['reps'] },
+    weight_reps: { label: '重量 × 回数',      fields: ['weight', 'reps'] },
+    minutes:     { label: '時間（分）',       fields: ['minutes'] },
+    distance_time: { label: '距離 + 時間',    fields: ['distance', 'durationMin'] }
+  };
+
+  ODL.CATEGORIES = {
+    strength: '筋力',
+    cardio: '有酸素',
+    mobility: '柔軟・その他'
+  };
+
+  /* ---------------------------------------------------------------------
+   * 初期設定値（設定画面から変更可能）
+   * ------------------------------------------------------------------- */
+  ODL.DEFAULT_SETTINGS = {
+    exp: {
+      /* 全体EXP倍率。バランス調整用 */
+      expMultiplier: 1.0,
+      /* Lv = floor(sqrt(累積EXP / levelCoefficient)) + 1 */
+      levelCoefficient: 40
+    },
+    growth: {
+      /* BaseGrowth = Load × growthCoefficient */
+      growthCoefficient: 0.0025,
+      /* GrowthCorrection = sqrt(statBase / currentStat) */
+      statBase: 10,
+      /* 成長が完全に止まらないよう補正に下限を設ける */
+      minCorrection: 0.15,
+      /* ステータス初期値 */
+      initialStat: 10
+    },
+    pace: {
+      /* ランニングの基準ペース（分/km） */
+      basePaceMinPerKm: 6,
+      minPaceFactor: 0.6,
+      maxPaceFactor: 1.6
+    },
+    streak: {
+      /* 「記録なしがこの日数続いたらリセット」 */
+      resetAfterDays: 3,
+      /* 到達ストリーク日数 → EXPボーナス率 */
+      bonusTable: [
+        { days: 3,   rate: 0.05 },
+        { days: 7,   rate: 0.10 },
+        { days: 14,  rate: 0.15 },
+        { days: 30,  rate: 0.20 },
+        { days: 60,  rate: 0.25 },
+        { days: 100, rate: 0.30 }
+      ]
+    },
+    pb: {
+      enabled: true,
+      /* パーソナルベスト更新時のEXPボーナス率 */
+      bonus: 0.10
+    },
+    display: {
+      /* ja: 日本語 / abbr: 略称 / both: 両方 */
+      statLabel: 'both',
+      theme: 'dark',
+      /* ステータスバーの満タン基準値 */
+      statBarMax: 60
+    }
+  };
+
+  /* ---------------------------------------------------------------------
+   * 初期種目マスタ（ハードコードではなく「初期データ」）
+   * 係数の根拠:
+   *   週3回 × 複数種目 を1年継続 → Lv20台 に着地するよう調整。
+   *   例) 腕立て100回=Load40 / スクワット100回=Load36 / 腹筋100回=Load32
+   *       懸垂25回=Load40 / ランニング5km(6分/km)=Load50
+   * ------------------------------------------------------------------- */
+  ODL.DEFAULT_ACTIVITY_MASTERS = [
+    {
+      activityId: 'running', name: 'ランニング', shortName: 'ラン', icon: '🏃',
+      category: 'cardio', inputType: 'distance_time', unit: 'km',
+      loadCoefficient: 10.0, expCoefficient: 1.0,
+      statAllocation: { STR: 0, VIT: 20, END: 60, AGI: 20, DEX: 0 },
+      quickValues: [2, 3, 5, 10],
+      active: true, sortOrder: 10, builtIn: true
+    },
+    {
+      activityId: 'squat', name: 'スクワット', shortName: 'スクワット', icon: '🦵',
+      category: 'strength', inputType: 'reps', unit: '回',
+      loadCoefficient: 3.6, expCoefficient: 1.0,
+      statAllocation: { STR: 60, VIT: 30, END: 10, AGI: 0, DEX: 0 },
+      quickValues: [20, 50, 100, 150],
+      active: true, sortOrder: 20, builtIn: true
+    },
+    {
+      activityId: 'pushup', name: '腕立て伏せ', shortName: '腕立て', icon: '💪',
+      category: 'strength', inputType: 'reps', unit: '回',
+      loadCoefficient: 4.0, expCoefficient: 1.0,
+      statAllocation: { STR: 70, VIT: 30, END: 0, AGI: 0, DEX: 0 },
+      quickValues: [20, 50, 100, 150],
+      active: true, sortOrder: 30, builtIn: true
+    },
+    {
+      activityId: 'pullup', name: '懸垂', shortName: '懸垂', icon: '🧗',
+      category: 'strength', inputType: 'reps', unit: '回',
+      loadCoefficient: 8.0, expCoefficient: 1.0,
+      statAllocation: { STR: 65, VIT: 15, END: 0, AGI: 0, DEX: 20 },
+      quickValues: [5, 10, 20, 30],
+      active: true, sortOrder: 40, builtIn: true
+    },
+    {
+      activityId: 'situp', name: '腹筋', shortName: '腹筋', icon: '🔥',
+      category: 'strength', inputType: 'reps', unit: '回',
+      loadCoefficient: 3.2, expCoefficient: 1.0,
+      statAllocation: { STR: 30, VIT: 50, END: 20, AGI: 0, DEX: 0 },
+      quickValues: [20, 50, 100, 150],
+      active: true, sortOrder: 50, builtIn: true
+    },
+    {
+      activityId: 'grip', name: '握力', shortName: '握力', icon: '✊',
+      category: 'strength', inputType: 'weight_reps', unit: 'kg・回',
+      loadCoefficient: 0.6, expCoefficient: 1.0,
+      statAllocation: { STR: 90, VIT: 10, END: 0, AGI: 0, DEX: 0 },
+      quickValues: [],
+      active: true, sortOrder: 60, builtIn: true
+    },
+    {
+      activityId: 'stretch', name: '柔軟', shortName: '柔軟', icon: '🧘',
+      category: 'mobility', inputType: 'minutes', unit: '分',
+      loadCoefficient: 4.5, expCoefficient: 1.0,
+      statAllocation: { STR: 0, VIT: 0, END: 0, AGI: 20, DEX: 80 },
+      quickValues: [5, 10, 15, 30],
+      active: true, sortOrder: 70, builtIn: true
+    }
+  ];
+
+  /* 身体データの測定項目（ゲームのステータスとは完全に別物） */
+  ODL.DEFAULT_BODY_METRICS = [
+    { metricId: 'height',   name: '身長',   unit: 'cm', step: 0.1, active: true,  sortOrder: 10, builtIn: true },
+    { metricId: 'weight',   name: '体重',   unit: 'kg', step: 0.1, active: true,  sortOrder: 20, builtIn: true },
+    { metricId: 'bodyFat',  name: '体脂肪率', unit: '%', step: 0.1, active: true,  sortOrder: 30, builtIn: true },
+    { metricId: 'chest',    name: '胸囲',   unit: 'cm', step: 0.1, active: true,  sortOrder: 40, builtIn: true },
+    { metricId: 'waist',    name: 'ウエスト', unit: 'cm', step: 0.1, active: true,  sortOrder: 50, builtIn: true },
+    { metricId: 'arm',      name: '上腕',   unit: 'cm', step: 0.1, active: true,  sortOrder: 60, builtIn: true },
+    { metricId: 'thigh',    name: '太もも', unit: 'cm', step: 0.1, active: true,  sortOrder: 70, builtIn: true }
+  ];
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/utils.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / utils.js
+ * 汎用ユーティリティ（日付・ID・数値・オブジェクト操作）
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils = {};
+
+  /* ---------------- ID ---------------- */
+  U.uuid = function () {
+    try {
+      if (global.crypto && typeof global.crypto.randomUUID === 'function') {
+        return global.crypto.randomUUID();
+      }
+      if (global.crypto && typeof global.crypto.getRandomValues === 'function') {
+        var b = new Uint8Array(16);
+        global.crypto.getRandomValues(b);
+        b[6] = (b[6] & 0x0f) | 0x40;
+        b[8] = (b[8] & 0x3f) | 0x80;
+        var h = [];
+        for (var i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
+        return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' +
+               h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' +
+               h.slice(10, 16).join('');
+      }
+    } catch (e) { /* fallthrough */ }
+    return 'id-' + Date.now().toString(36) + '-' +
+           Math.random().toString(36).slice(2, 10) + '-' +
+           Math.random().toString(36).slice(2, 10);
+  };
+
+  U.slugId = function (base) {
+    var s = String(base || '').trim().toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
+    if (!s) s = 'item';
+    return s + '_' + Math.random().toString(36).slice(2, 7);
+  };
+
+  /* ---------------- 数値 ---------------- */
+  U.num = function (v, fallback) {
+    var n = typeof v === 'number' ? v : parseFloat(v);
+    return (typeof n === 'number' && isFinite(n)) ? n : (fallback === undefined ? 0 : fallback);
+  };
+
+  U.round = function (v, digits) {
+    var d = digits === undefined ? 0 : digits;
+    var f = Math.pow(10, d);
+    var n = U.num(v, 0);
+    return Math.round(n * f) / f;
+  };
+
+  U.clamp = function (v, min, max) {
+    var n = U.num(v, min);
+    if (n < min) return min;
+    if (n > max) return max;
+    return n;
+  };
+
+  U.fmt = function (v, digits) {
+    var d = digits === undefined ? 1 : digits;
+    return U.num(v, 0).toFixed(d);
+  };
+
+  U.fmtInt = function (v) {
+    return Math.round(U.num(v, 0)).toLocaleString('ja-JP');
+  };
+
+  /* ---------------- 日付（すべて YYYY-MM-DD のローカル日付文字列で扱う） ---------------- */
+  U.pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  U.toDateStr = function (d) {
+    var dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt.getTime())) return null;
+    return dt.getFullYear() + '-' + U.pad2(dt.getMonth() + 1) + '-' + U.pad2(dt.getDate());
+  };
+
+  U.today = function () { return U.toDateStr(new Date()); };
+
+  U.isDateStr = function (s) {
+    return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(U.parseDate(s));
+  };
+
+  U.parseDate = function (s) {
+    if (s instanceof Date) return s.getTime();
+    if (typeof s !== 'string') return NaN;
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (!m) return NaN;
+    var y = +m[1], mo = +m[2], da = +m[3];
+    var d = new Date(y, mo - 1, da, 12, 0, 0, 0); /* 正午基準にしてDST影響を避ける */
+    if (d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== da) return NaN;
+    return d.getTime();
+  };
+
+  /* b - a の日数差 */
+  U.diffDays = function (a, b) {
+    var ta = U.parseDate(a), tb = U.parseDate(b);
+    if (isNaN(ta) || isNaN(tb)) return NaN;
+    return Math.round((tb - ta) / 86400000);
+  };
+
+  U.addDays = function (dateStr, days) {
+    var t = U.parseDate(dateStr);
+    if (isNaN(t)) return null;
+    return U.toDateStr(new Date(t + days * 86400000));
+  };
+
+  U.monthKey = function (dateStr) {
+    return typeof dateStr === 'string' ? dateStr.slice(0, 7) : '';
+  };
+
+  U.formatDateJa = function (dateStr, withWeekday) {
+    var t = U.parseDate(dateStr);
+    if (isNaN(t)) return String(dateStr || '');
+    var d = new Date(t);
+    var s = (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    if (withWeekday) s += '（' + '日月火水木金土'[d.getDay()] + '）';
+    return s;
+  };
+
+  U.formatDateFull = function (dateStr) {
+    var t = U.parseDate(dateStr);
+    if (isNaN(t)) return String(dateStr || '');
+    var d = new Date(t);
+    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日（' +
+      '日月火水木金土'[d.getDay()] + '）';
+  };
+
+  U.nowIso = function () { return new Date().toISOString(); };
+
+  /* ---------------- オブジェクト ---------------- */
+  U.clone = function (o) {
+    if (o === null || typeof o !== 'object') return o;
+    try {
+      if (typeof structuredClone === 'function') return structuredClone(o);
+    } catch (e) { /* fallthrough */ }
+    return JSON.parse(JSON.stringify(o));
+  };
+
+  U.isPlainObject = function (o) {
+    return !!o && typeof o === 'object' && !Array.isArray(o);
+  };
+
+  /* defaults の構造を土台に、target の値で上書きしたものを返す（不足キーを補完） */
+  U.mergeDefaults = function (target, defaults) {
+    var out = U.clone(defaults);
+    if (!U.isPlainObject(target)) return out;
+    Object.keys(target).forEach(function (k) {
+      var tv = target[k];
+      if (U.isPlainObject(tv) && U.isPlainObject(out[k])) {
+        out[k] = U.mergeDefaults(tv, out[k]);
+      } else if (tv !== undefined) {
+        out[k] = U.clone(tv);
+      }
+    });
+    return out;
+  };
+
+  U.groupBy = function (arr, keyFn) {
+    var map = {};
+    (arr || []).forEach(function (item) {
+      var k = keyFn(item);
+      if (!map[k]) map[k] = [];
+      map[k].push(item);
+    });
+    return map;
+  };
+
+  U.sum = function (arr, fn) {
+    var t = 0;
+    (arr || []).forEach(function (x, i) { t += U.num(fn ? fn(x, i) : x, 0); });
+    return t;
+  };
+
+  U.escapeHtml = function (s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+
+  /* 空のステータスオブジェクト */
+  U.zeroStats = function () {
+    var o = {};
+    ODL.STATS.forEach(function (s) { o[s] = 0; });
+    return o;
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/schema.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / schema.js
+ *
+ * 保存データの「形」と、バージョン間の migration を担当する。
+ *
+ * 設計方針（最重要）
+ *  - 保存データには必ず schemaVersion を持たせる
+ *  - 起動時・復元時に schemaVersion を確認し、古ければ自動で migration する
+ *  - migration は「変換」であり「作り直し」ではない。過去の記録は必ず引き継ぐ
+ *  - migration に失敗したら、元データには一切手を触れない（例外を投げて中断）
+ *  - 未来のバージョン（アプリより新しいデータ）は読み込まず、明示的に拒否する
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var S = ODL.Schema = {};
+
+  /* ---------------------------------------------------------------------
+   * 空データの生成
+   * ------------------------------------------------------------------- */
+  S.createEmptyData = function () {
+    var now = U.nowIso();
+    return {
+      schemaVersion: ODL.CURRENT_SCHEMA_VERSION,
+      appVersion: ODL.APP_VERSION,
+      createdAt: now,
+      updatedAt: now,
+      userProfile: {
+        nickname: '',
+        startDate: U.today()
+      },
+      settings: U.clone(ODL.DEFAULT_SETTINGS),
+      activityMasters: U.clone(ODL.DEFAULT_ACTIVITY_MASTERS),
+      bodyMetrics: U.clone(ODL.DEFAULT_BODY_METRICS),
+      trainingRecords: [],
+      bodyRecords: [],
+      /* personalBests は trainingRecords から再計算できる派生データだが、
+         指示書のデータ設計に合わせて保存もする（読み込み時に必ず再計算する） */
+      personalBests: {},
+      meta: {
+        lastBackupAt: null,
+        lastMigrationAt: null
+      }
+    };
+  };
+
+  /* ---------------------------------------------------------------------
+   * migration 定義
+   *   キー n の関数は「バージョン n のデータを n+1 にする」
+   *   例: MIGRATIONS[1] = v1 -> v2
+   *
+   *   0 は「schemaVersion を持たない、あるいは 0 の古い保存形式」を表す。
+   *   将来 v2 を作るときは MIGRATIONS[1] を追加し、
+   *   ODL.CURRENT_SCHEMA_VERSION を 2 にするだけでよい。
+   * ------------------------------------------------------------------- */
+  S.MIGRATIONS = {
+    /* v0 (schemaVersion なし / 0) -> v1
+       初期プロトタイプ形式の受け皿。記録は必ず引き継ぐ。 */
+    0: function (data) {
+      var d = U.clone(data) || {};
+      var base = S.createEmptyData();
+
+      /* 旧形式では records / history などに記録が入っていた可能性がある */
+      var legacyRecords = d.trainingRecords || d.records || d.history || [];
+      var legacyBody = d.bodyRecords || d.body || d.measurements || [];
+
+      d.trainingRecords = Array.isArray(legacyRecords) ? legacyRecords : [];
+      d.bodyRecords = Array.isArray(legacyBody) ? legacyBody : [];
+      d.settings = U.mergeDefaults(d.settings, base.settings);
+      d.activityMasters = (Array.isArray(d.activityMasters) && d.activityMasters.length)
+        ? d.activityMasters : base.activityMasters;
+      d.bodyMetrics = (Array.isArray(d.bodyMetrics) && d.bodyMetrics.length)
+        ? d.bodyMetrics : base.bodyMetrics;
+      d.userProfile = U.mergeDefaults(d.userProfile, base.userProfile);
+      d.meta = U.mergeDefaults(d.meta, base.meta);
+      d.personalBests = U.isPlainObject(d.personalBests) ? d.personalBests : {};
+      d.schemaVersion = 1;
+      return d;
+    }
+  };
+
+  /* ---------------------------------------------------------------------
+   * migration 実行
+   *   - 入力データは変更しない（clone して進める）
+   *   - 途中で失敗したら例外を投げる。呼び出し側が元データを保護する
+   * ------------------------------------------------------------------- */
+  S.needsMigration = function (data) {
+    var v = S.readVersion(data);
+    return v < ODL.CURRENT_SCHEMA_VERSION;
+  };
+
+  S.readVersion = function (data) {
+    if (!U.isPlainObject(data)) return -1;
+    var v = data.schemaVersion;
+    if (v === undefined || v === null) return 0;      /* 旧形式扱い */
+    var n = parseInt(v, 10);
+    return isFinite(n) ? n : -1;
+  };
+
+  S.migrate = function (rawData) {
+    var version = S.readVersion(rawData);
+    if (version < 0) {
+      throw new Error('SCHEMA_VERSION_INVALID');
+    }
+    if (version > ODL.CURRENT_SCHEMA_VERSION) {
+      /* アプリより新しいデータ。読み込むと壊す可能性があるので拒否する */
+      throw new Error('SCHEMA_VERSION_TOO_NEW');
+    }
+
+    var data = U.clone(rawData);
+    var steps = [];
+    var guard = 0;
+
+    while (version < ODL.CURRENT_SCHEMA_VERSION) {
+      if (++guard > 100) throw new Error('MIGRATION_LOOP');
+      var fn = S.MIGRATIONS[version];
+      if (typeof fn !== 'function') {
+        throw new Error('MIGRATION_MISSING:' + version + '->' + (version + 1));
+      }
+      var before = version;
+      var next = fn(data);
+      if (!U.isPlainObject(next)) throw new Error('MIGRATION_FAILED:' + before);
+      var newVersion = S.readVersion(next);
+      if (newVersion <= before) throw new Error('MIGRATION_NO_PROGRESS:' + before);
+      data = next;
+      version = newVersion;
+      steps.push(before + '→' + version);
+    }
+
+    return { data: data, migrated: steps.length > 0, steps: steps };
+  };
+
+  /* ---------------------------------------------------------------------
+   * 正規化
+   *   読み込んだデータに欠損があってもアプリが落ちないように形を整える。
+   *   「壊れているから初期化する」ことは絶対にしない。拾えるものは拾う。
+   * ------------------------------------------------------------------- */
+  function normalizeAllocation(alloc) {
+    var out = {};
+    ODL.STATS.forEach(function (s) { out[s] = U.clamp(U.num(alloc && alloc[s], 0), 0, 1000); });
+    return out;
+  }
+
+  S.normalizeMaster = function (m, index) {
+    var base = {
+      activityId: '', name: '', shortName: '', icon: '🏋️',
+      category: 'strength', inputType: 'reps', unit: '回',
+      loadCoefficient: 1, expCoefficient: 1,
+      statAllocation: { STR: 0, VIT: 0, END: 0, AGI: 0, DEX: 0 },
+      quickValues: [], active: true, sortOrder: 100, builtIn: false
+    };
+    var o = U.mergeDefaults(m, base);
+    o.activityId = String(o.activityId || U.slugId('activity'));
+    o.name = String(o.name || o.activityId);
+    o.shortName = String(o.shortName || o.name);
+    if (!ODL.INPUT_TYPES[o.inputType]) o.inputType = 'reps';
+    if (!ODL.CATEGORIES[o.category]) o.category = 'strength';
+    o.loadCoefficient = U.num(o.loadCoefficient, 1);
+    o.expCoefficient = U.num(o.expCoefficient, 1);
+    o.statAllocation = normalizeAllocation(o.statAllocation);
+    o.quickValues = Array.isArray(o.quickValues)
+      ? o.quickValues.map(function (v) { return U.num(v, 0); }).filter(function (v) { return v > 0; })
+      : [];
+    o.active = o.active !== false;
+    o.sortOrder = U.num(o.sortOrder, (index + 1) * 10);
+    return o;
+  };
+
+  S.normalizeRecord = function (r) {
+    if (!U.isPlainObject(r)) return null;
+    var rec = {
+      id: r.id ? String(r.id) : U.uuid(),
+      date: U.isDateStr(r.date) ? r.date : (U.toDateStr(r.date) || U.today()),
+      activityId: String(r.activityId || r.activity || ''),
+      input: U.isPlainObject(r.input) ? r.input : {},
+      value: U.num(r.value, 0),
+      unit: String(r.unit || ''),
+      load: U.num(r.load, 0),
+      exp: U.num(r.exp, 0),
+      expBreakdown: U.isPlainObject(r.expBreakdown) ? r.expBreakdown : {},
+      statGrowth: {},
+      isPersonalBest: !!r.isPersonalBest,
+      note: typeof r.note === 'string' ? r.note : '',
+      calcVersion: U.num(r.calcVersion, 0),
+      createdAt: r.createdAt || U.nowIso(),
+      updatedAt: r.updatedAt || r.createdAt || U.nowIso()
+    };
+    ODL.STATS.forEach(function (s) {
+      rec.statGrowth[s] = U.num(r.statGrowth && r.statGrowth[s], 0);
+    });
+    /* 旧データで input が無い場合、value から復元を試みる */
+    if (!Object.keys(rec.input).length && rec.value > 0) {
+      rec.input = { reps: rec.value };
+    }
+    return rec.activityId ? rec : null;
+  };
+
+  S.normalizeBodyRecord = function (r) {
+    if (!U.isPlainObject(r)) return null;
+    var values = {};
+    if (U.isPlainObject(r.values)) {
+      Object.keys(r.values).forEach(function (k) {
+        var v = r.values[k];
+        if (v === '' || v === null || v === undefined) return;
+        var n = U.num(v, NaN);
+        if (isFinite(n)) values[k] = n;
+      });
+    }
+    return {
+      id: r.id ? String(r.id) : U.uuid(),
+      date: U.isDateStr(r.date) ? r.date : (U.toDateStr(r.date) || U.today()),
+      values: values,
+      note: typeof r.note === 'string' ? r.note : '',
+      createdAt: r.createdAt || U.nowIso(),
+      updatedAt: r.updatedAt || r.createdAt || U.nowIso()
+    };
+  };
+
+  S.normalizeMetric = function (m, index) {
+    var base = { metricId: '', name: '', unit: '', step: 0.1, active: true, sortOrder: 100, builtIn: false };
+    var o = U.mergeDefaults(m, base);
+    o.metricId = String(o.metricId || U.slugId('metric'));
+    o.name = String(o.name || o.metricId);
+    o.unit = String(o.unit || '');
+    o.step = U.num(o.step, 0.1) || 0.1;
+    o.active = o.active !== false;
+    o.sortOrder = U.num(o.sortOrder, (index + 1) * 10);
+    return o;
+  };
+
+  S.normalize = function (data) {
+    var base = S.createEmptyData();
+    var d = U.isPlainObject(data) ? U.clone(data) : {};
+
+    var out = {
+      schemaVersion: ODL.CURRENT_SCHEMA_VERSION,
+      appVersion: ODL.APP_VERSION,
+      createdAt: d.createdAt || base.createdAt,
+      updatedAt: d.updatedAt || base.updatedAt,
+      userProfile: U.mergeDefaults(d.userProfile, base.userProfile),
+      settings: U.mergeDefaults(d.settings, base.settings),
+      activityMasters: [],
+      bodyMetrics: [],
+      trainingRecords: [],
+      bodyRecords: [],
+      personalBests: {},
+      meta: U.mergeDefaults(d.meta, base.meta)
+    };
+
+    /* ストリークボーナス表は配列なので mergeDefaults の対象外として個別処理 */
+    if (Array.isArray(d.settings && d.settings.streak && d.settings.streak.bonusTable)) {
+      out.settings.streak.bonusTable = d.settings.streak.bonusTable
+        .map(function (b) { return { days: U.num(b.days, 0), rate: U.num(b.rate, 0) }; })
+        .filter(function (b) { return b.days > 0; })
+        .sort(function (a, b) { return a.days - b.days; });
+    }
+
+    var masters = Array.isArray(d.activityMasters) && d.activityMasters.length
+      ? d.activityMasters : base.activityMasters;
+    var seen = {};
+    masters.forEach(function (m, i) {
+      var nm = S.normalizeMaster(m, i);
+      if (seen[nm.activityId]) return;
+      seen[nm.activityId] = true;
+      out.activityMasters.push(nm);
+    });
+
+    var metrics = Array.isArray(d.bodyMetrics) && d.bodyMetrics.length
+      ? d.bodyMetrics : base.bodyMetrics;
+    var seenM = {};
+    metrics.forEach(function (m, i) {
+      var nm = S.normalizeMetric(m, i);
+      if (seenM[nm.metricId]) return;
+      seenM[nm.metricId] = true;
+      out.bodyMetrics.push(nm);
+    });
+
+    var seenR = {};
+    (Array.isArray(d.trainingRecords) ? d.trainingRecords : []).forEach(function (r) {
+      var nr = S.normalizeRecord(r);
+      if (!nr) return;
+      if (seenR[nr.id]) nr.id = U.uuid();
+      seenR[nr.id] = true;
+      out.trainingRecords.push(nr);
+    });
+
+    var seenB = {};
+    (Array.isArray(d.bodyRecords) ? d.bodyRecords : []).forEach(function (r) {
+      var nr = S.normalizeBodyRecord(r);
+      if (!nr) return;
+      if (seenB[nr.id]) nr.id = U.uuid();
+      seenB[nr.id] = true;
+      out.bodyRecords.push(nr);
+    });
+
+    return out;
+  };
+
+  /* ---------------------------------------------------------------------
+   * バックアップJSONの妥当性チェック
+   * ------------------------------------------------------------------- */
+  S.validateImport = function (obj) {
+    var errors = [];
+    if (!U.isPlainObject(obj)) {
+      errors.push('JSONの中身がオブジェクトではありません。');
+      return { ok: false, errors: errors };
+    }
+    var v = S.readVersion(obj);
+    if (v < 0) errors.push('schemaVersion が不正です。');
+    if (v > ODL.CURRENT_SCHEMA_VERSION) {
+      errors.push('このバックアップは新しいバージョンのアプリで作られています（schemaVersion ' +
+        v + '）。アプリを更新してから読み込んでください。');
+    }
+    if (!Array.isArray(obj.trainingRecords) && !Array.isArray(obj.records)) {
+      errors.push('トレーニング記録の配列が見つかりません。');
+    }
+    return { ok: errors.length === 0, errors: errors, version: v };
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/storage.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / storage.js
+ *
+ * 「保存場所」だけを担当する最下層。
+ * UIはもちろん、Repository より上のコードもここを直接触らない。
+ * 将来 localStorage → IndexedDB に差し替える場合も、
+ * このファイルの Driver を入れ替えるだけで済むようにしてある。
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+
+  /* ---------------------------------------------------------------------
+   * Driver: localStorage 実装
+   * ------------------------------------------------------------------- */
+  function LocalStorageDriver(storage) {
+    this.ls = storage;
+    this.name = 'localStorage';
+  }
+  LocalStorageDriver.prototype.get = function (key) {
+    var raw = this.ls.getItem(key);
+    return raw === null ? null : raw;
+  };
+  LocalStorageDriver.prototype.set = function (key, value) {
+    this.ls.setItem(key, value);
+  };
+  LocalStorageDriver.prototype.remove = function (key) {
+    this.ls.removeItem(key);
+  };
+  LocalStorageDriver.prototype.keys = function () {
+    var out = [];
+    for (var i = 0; i < this.ls.length; i++) out.push(this.ls.key(i));
+    return out;
+  };
+
+  /* ---------------------------------------------------------------------
+   * Driver: メモリ実装（localStorage が使えない環境・テスト用）
+   * ------------------------------------------------------------------- */
+  function MemoryDriver() {
+    this.map = {};
+    this.name = 'memory';
+  }
+  MemoryDriver.prototype.get = function (k) {
+    return Object.prototype.hasOwnProperty.call(this.map, k) ? this.map[k] : null;
+  };
+  MemoryDriver.prototype.set = function (k, v) { this.map[k] = String(v); };
+  MemoryDriver.prototype.remove = function (k) { delete this.map[k]; };
+  MemoryDriver.prototype.keys = function () { return Object.keys(this.map); };
+
+  function detectDriver() {
+    try {
+      var ls = global.localStorage;
+      if (ls) {
+        var probe = '__odl_probe__';
+        ls.setItem(probe, '1');
+        ls.removeItem(probe);
+        return new LocalStorageDriver(ls);
+      }
+    } catch (e) { /* Private mode など */ }
+    return new MemoryDriver();
+  }
+
+  var driver = detectDriver();
+
+  var Storage = ODL.Storage = {
+    get driverName() { return driver.name; },
+    isPersistent: function () { return driver.name !== 'memory'; },
+
+    /* テスト用に差し替え可能にしておく */
+    _useDriver: function (d) { driver = d; },
+    _MemoryDriver: MemoryDriver,
+    _LocalStorageDriver: LocalStorageDriver,
+
+    readRaw: function (key) {
+      try { return driver.get(key); } catch (e) { return null; }
+    },
+
+    writeRaw: function (key, str) {
+      driver.set(key, str);
+    },
+
+    remove: function (key) {
+      try { driver.remove(key); } catch (e) { /* noop */ }
+    },
+
+    keys: function () {
+      try { return driver.keys(); } catch (e) { return []; }
+    },
+
+    /* JSONとして読む。壊れていても例外にせず、理由付きで返す */
+    readJson: function (key) {
+      var raw = Storage.readRaw(key);
+      if (raw === null || raw === '') return { found: false, data: null, raw: null, error: null };
+      try {
+        return { found: true, data: JSON.parse(raw), raw: raw, error: null };
+      } catch (e) {
+        return { found: true, data: null, raw: raw, error: 'JSON_PARSE_ERROR' };
+      }
+    },
+
+    /* 書き込み。書けなかった場合は既存データを壊さずに false を返す */
+    writeJson: function (key, obj) {
+      var str;
+      try {
+        str = JSON.stringify(obj);
+      } catch (e) {
+        return { ok: false, error: 'SERIALIZE_ERROR' };
+      }
+      try {
+        driver.set(key, str);
+        /* 書き込み検証（容量超過などで静かに失敗する環境への保険） */
+        var back = driver.get(key);
+        if (back === null || back.length !== str.length) {
+          return { ok: false, error: 'VERIFY_FAILED' };
+        }
+        return { ok: true, bytes: str.length };
+      } catch (e) {
+        var name = e && e.name ? e.name : '';
+        var quota = /quota/i.test(name) || /Quota/i.test(String(e && e.message));
+        return { ok: false, error: quota ? 'QUOTA_EXCEEDED' : 'WRITE_ERROR' };
+      }
+    },
+
+    estimateBytes: function () {
+      var total = 0;
+      Storage.keys().forEach(function (k) {
+        if (k.indexOf('ore_dake_levelup') !== 0) return;
+        var v = Storage.readRaw(k);
+        total += (k.length + (v ? v.length : 0)) * 2;
+      });
+      return total;
+    }
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/calculator.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / calculator.js
+ *
+ * 計算式はすべてここに集約する。UI側に計算式を書かない。
+ * 係数はすべて settings / activityMaster から受け取り、ここには埋め込まない。
+ *
+ *   Load        … トレーニング量を「負荷」に変換した値
+ *   EXP         … Load × expCoefficient × 倍率 × (1 + ストリーク + PB)
+ *   Lv          … 累積EXPから算出
+ *   StatGrowth  … Load × growthCoefficient × 配分 × 成長補正
+ *   Streak      … 記録日の並びから算出
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator = {};
+
+  /* ---------------------------------------------------------------------
+   * 入力値の検証
+   * ------------------------------------------------------------------- */
+  C.validateInput = function (master, input) {
+    var errors = [];
+    var fields = (ODL.INPUT_TYPES[master.inputType] || ODL.INPUT_TYPES.reps).fields;
+    var labels = {
+      reps: '回数', weight: '重量', minutes: '時間', distance: '距離', durationMin: 'タイム'
+    };
+    fields.forEach(function (f) {
+      /* タイムは任意入力（未入力ならペース補正なし） */
+      var optional = (f === 'durationMin');
+      var raw = input ? input[f] : undefined;
+      if (raw === '' || raw === null || raw === undefined) {
+        if (!optional) errors.push(labels[f] + 'を入力してください。');
+        return;
+      }
+      var n = U.num(raw, NaN);
+      if (!isFinite(n)) { errors.push(labels[f] + 'は数値で入力してください。'); return; }
+      if (n <= 0) { errors.push(labels[f] + 'は0より大きい値を入力してください。'); return; }
+      if (n > 1000000) { errors.push(labels[f] + 'の値が大きすぎます。'); }
+    });
+    return { ok: errors.length === 0, errors: errors };
+  };
+
+  /* ---------------------------------------------------------------------
+   * Load
+   * ------------------------------------------------------------------- */
+  C.calculateLoad = function (master, input, settings) {
+    var lc = U.num(master.loadCoefficient, 1);
+    var detail = { paceFactor: null, pace: null };
+    var load = 0;
+
+    switch (master.inputType) {
+      case 'reps': {
+        var reps = U.num(input.reps, 0);
+        load = reps > 0 ? lc * Math.sqrt(reps) : 0;
+        break;
+      }
+      case 'weight_reps': {
+        var w = U.num(input.weight, 0);
+        var r = U.num(input.reps, 0);
+        load = (w > 0 && r > 0) ? lc * Math.sqrt(w * r) : 0;
+        break;
+      }
+      case 'minutes': {
+        var m = U.num(input.minutes, 0);
+        load = m > 0 ? lc * Math.sqrt(m) : 0;
+        break;
+      }
+      case 'distance_time': {
+        var d = U.num(input.distance, 0);
+        var dur = U.num(input.durationMin, 0);
+        var pf = 1;
+        if (d > 0 && dur > 0) {
+          var pace = dur / d;                      /* 分/km */
+          var basePace = U.num(settings.pace.basePaceMinPerKm, 6);
+          pf = Math.sqrt(basePace / pace);
+          pf = U.clamp(pf, U.num(settings.pace.minPaceFactor, 0.6),
+                           U.num(settings.pace.maxPaceFactor, 1.6));
+          detail.pace = pace;
+        }
+        detail.paceFactor = pf;
+        load = d > 0 ? d * lc * pf : 0;
+        break;
+      }
+      default:
+        load = 0;
+    }
+
+    return { load: U.round(Math.max(0, load), 4), detail: detail };
+  };
+
+  /* ---------------------------------------------------------------------
+   * EXP
+   * ------------------------------------------------------------------- */
+  C.streakBonusRate = function (streakDays, settings) {
+    var table = (settings.streak && settings.streak.bonusTable) || [];
+    var rate = 0;
+    table.forEach(function (b) {
+      if (U.num(streakDays, 0) >= U.num(b.days, 0)) rate = U.num(b.rate, 0);
+    });
+    return rate;
+  };
+
+  C.calculateExp = function (load, master, settings, ctx) {
+    ctx = ctx || {};
+    var base = U.num(load, 0)
+      * U.num(master.expCoefficient, 1)
+      * U.num(settings.exp.expMultiplier, 1);
+
+    var streakRate = C.streakBonusRate(ctx.streakDays || 0, settings);
+    var pbRate = (settings.pb && settings.pb.enabled && ctx.isPersonalBest)
+      ? U.num(settings.pb.bonus, 0) : 0;
+
+    var total = base * (1 + streakRate + pbRate);
+
+    return {
+      exp: U.round(Math.max(0, total), 2),
+      breakdown: {
+        base: U.round(base, 2),
+        streakDays: U.num(ctx.streakDays, 0),
+        streakRate: streakRate,
+        streakBonus: U.round(base * streakRate, 2),
+        isPersonalBest: !!ctx.isPersonalBest,
+        pbRate: pbRate,
+        pbBonus: U.round(base * pbRate, 2)
+      }
+    };
+  };
+
+  /* ---------------------------------------------------------------------
+   * レベル
+   *   Lv = floor(sqrt(累積EXP / k)) + 1
+   *   Lv n に必要な累積EXP = (n-1)^2 * k
+   * ------------------------------------------------------------------- */
+  C.expForLevel = function (level, settings) {
+    var k = U.num(settings.exp.levelCoefficient, 40);
+    var n = Math.max(1, Math.floor(level));
+    return (n - 1) * (n - 1) * k;
+  };
+
+  C.calculateLevel = function (cumulativeExp, settings) {
+    var k = U.num(settings.exp.levelCoefficient, 40);
+    var exp = Math.max(0, U.num(cumulativeExp, 0));
+    var level = Math.floor(Math.sqrt(exp / k)) + 1;
+    if (!isFinite(level) || level < 1) level = 1;
+
+    var cur = C.expForLevel(level, settings);
+    var next = C.expForLevel(level + 1, settings);
+    var span = next - cur;
+    var into = exp - cur;
+
+    return {
+      level: level,
+      cumulativeExp: exp,
+      currentLevelExp: cur,
+      nextLevelExp: next,
+      expIntoLevel: into,
+      expForNextLevel: span,
+      remaining: Math.max(0, next - exp),
+      progress: span > 0 ? U.clamp(into / span, 0, 1) : 0
+    };
+  };
+
+  /* ---------------------------------------------------------------------
+   * ステータス成長
+   *   BaseGrowth  = Load × growthCoefficient
+   *   Correction  = sqrt(statBase / currentStat)   （下限あり）
+   *   Growth      = BaseGrowth × 配分率 × Correction
+   * ------------------------------------------------------------------- */
+  C.growthCorrection = function (currentStat, settings) {
+    var base = U.num(settings.growth.statBase, 10);
+    var cur = Math.max(U.num(currentStat, base), 0.1);
+    var corr = Math.sqrt(base / cur);
+    var min = U.num(settings.growth.minCorrection, 0.15);
+    return Math.max(min, corr);
+  };
+
+  C.calculateStatGrowth = function (load, master, currentStats, settings) {
+    var g = U.num(load, 0) * U.num(settings.growth.growthCoefficient, 0.0025);
+    var alloc = master.statAllocation || {};
+    var totalAlloc = 0;
+    ODL.STATS.forEach(function (s) { totalAlloc += U.num(alloc[s], 0); });
+
+    var out = U.zeroStats();
+    if (g <= 0 || totalAlloc <= 0) return out;
+
+    ODL.STATS.forEach(function (s) {
+      var rate = U.num(alloc[s], 0) / totalAlloc;   /* 合計100%でなくても正規化する */
+      if (rate <= 0) return;
+      var corr = C.growthCorrection(currentStats ? currentStats[s] : undefined, settings);
+      out[s] = U.round(g * rate * corr, 4);
+    });
+    return out;
+  };
+
+  /* ---------------------------------------------------------------------
+   * ストリーク
+   *   「記録なしが resetAfterDays 日連続」でリセット。
+   *   → 記録日どうしの間隔が resetAfterDays 日以内なら継続扱い。
+   *
+   *   currentStreak … 継続中チェーンの開始日から asOf 日までの経過日数
+   *   activeDays    … そのチェーン内で実際にトレーニングした日数
+   * ------------------------------------------------------------------- */
+  C.calculateStreak = function (dateList, settings, asOfDate) {
+    var gapLimit = Math.max(1, U.num(settings.streak.resetAfterDays, 3));
+    var asOf = U.isDateStr(asOfDate) ? asOfDate : U.today();
+
+    var dates = {};
+    (dateList || []).forEach(function (d) { if (U.isDateStr(d)) dates[d] = true; });
+    var sorted = Object.keys(dates).sort();
+
+    var empty = {
+      current: 0, activeDays: 0, best: 0, bestActiveDays: 0,
+      alive: false, startDate: null, lastDate: null, daysSinceLast: null,
+      breaksInDays: null
+    };
+    if (!sorted.length) return empty;
+
+    /* 対象は asOf 以前の記録のみ（未来日の記録はストリーク判定に使わない） */
+    var past = sorted.filter(function (d) { return U.diffDays(d, asOf) >= 0; });
+    if (!past.length) return empty;
+
+    var chains = [];
+    var chain = [past[0]];
+    for (var i = 1; i < past.length; i++) {
+      var gap = U.diffDays(past[i - 1], past[i]);
+      if (gap <= gapLimit) chain.push(past[i]);
+      else { chains.push(chain); chain = [past[i]]; }
+    }
+    chains.push(chain);
+
+    var best = 0, bestActive = 0;
+    chains.forEach(function (ch) {
+      var span = U.diffDays(ch[0], ch[ch.length - 1]) + 1;
+      if (span > best) best = span;
+      if (ch.length > bestActive) bestActive = ch.length;
+    });
+
+    var last = chains[chains.length - 1];
+    var lastDate = last[last.length - 1];
+    var daysSinceLast = U.diffDays(lastDate, asOf);
+    var alive = daysSinceLast <= gapLimit;
+
+    var current = alive ? (U.diffDays(last[0], asOf) + 1) : 0;
+    if (alive && current > best) best = current;
+    var activeDays = alive ? last.length : 0;
+    if (activeDays > bestActive) bestActive = activeDays;
+
+    return {
+      current: current,
+      activeDays: activeDays,
+      best: best,
+      bestActiveDays: bestActive,
+      alive: alive,
+      startDate: alive ? last[0] : null,
+      lastDate: lastDate,
+      daysSinceLast: daysSinceLast,
+      /* あと何日記録がないと途切れるか */
+      breaksInDays: alive ? Math.max(0, gapLimit - daysSinceLast) : 0
+    };
+  };
+
+  /* ---------------------------------------------------------------------
+   * パーソナルベスト
+   *   1回の記録の「代表値」で比較する。
+   *   reps → 回数 / weight_reps → 重量×回数 / minutes → 分 / distance_time → km
+   * ------------------------------------------------------------------- */
+  C.pbValue = function (master, input) {
+    switch (master.inputType) {
+      case 'reps':        return U.num(input.reps, 0);
+      case 'weight_reps': return U.num(input.weight, 0) * U.num(input.reps, 0);
+      case 'minutes':     return U.num(input.minutes, 0);
+      case 'distance_time': return U.num(input.distance, 0);
+      default:            return 0;
+    }
+  };
+
+  C.pbLabel = function (master, record) {
+    var input = record.input || {};
+    switch (master.inputType) {
+      case 'weight_reps':
+        return U.fmt(U.num(input.weight, 0), 1) + 'kg × ' + U.fmtInt(input.reps) + '回';
+      case 'distance_time':
+        return U.fmt(U.num(input.distance, 0), 2) + 'km';
+      case 'minutes':
+        return U.fmtInt(input.minutes) + '分';
+      default:
+        return U.fmtInt(input.reps) + '回';
+    }
+  };
+
+  /* 記録の代表表示値（履歴などで使う） */
+  C.displayValue = function (master, record) {
+    var input = record.input || {};
+    switch (master.inputType) {
+      case 'weight_reps':
+        return U.fmt(U.num(input.weight, 0), 1) + 'kg × ' + U.fmtInt(input.reps) + '回';
+      case 'distance_time': {
+        var s = U.fmt(U.num(input.distance, 0), 2) + 'km';
+        var dur = U.num(input.durationMin, 0);
+        if (dur > 0) s += ' / ' + C.formatDuration(dur);
+        return s;
+      }
+      case 'minutes':
+        return U.fmtInt(input.minutes) + '分';
+      default:
+        return U.fmtInt(input.reps) + '回';
+    }
+  };
+
+  C.formatDuration = function (minutes) {
+    var total = Math.round(U.num(minutes, 0) * 60);
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    if (h > 0) return h + '時間' + m + '分';
+    if (s > 0) return m + '分' + s + '秒';
+    return m + '分';
+  };
+
+  /* PB判定（同値では更新扱いにしない） */
+  C.isNewPersonalBest = function (master, input, currentPb) {
+    var v = C.pbValue(master, input);
+    if (v <= 0) return false;
+    if (!currentPb) return true;
+    return v > U.num(currentPb.value, 0) + 1e-9;
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/gamestate.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / gamestate.js
+ *
+ * ゲーム状態（Lv・EXP・ステータス・ストリーク・PB）は
+ * 「すべて trainingRecords から再計算できる」構造にしてある。
+ * 累積値を単独で持って記録と矛盾する、という事態を避けるため。
+ *
+ * 各記録には計算時点の load / exp / statGrowth が焼き込まれているので、
+ * あとから計算式を変えても過去の記録の値は勝手に変わらない。
+ * ここでやるのはその「集計」だけ。
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator;
+  var G = ODL.GameState = {};
+
+  /* 記録を時系列に並べる（同日内は作成順） */
+  G.sortRecords = function (records) {
+    return (records || []).slice().sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      var ca = String(a.createdAt || ''), cb = String(b.createdAt || '');
+      if (ca !== cb) return ca < cb ? -1 : 1;
+      return String(a.id) < String(b.id) ? -1 : 1;
+    });
+  };
+
+  G.masterMap = function (data) {
+    var map = {};
+    (data.activityMasters || []).forEach(function (m) { map[m.activityId] = m; });
+    return map;
+  };
+
+  G.findMaster = function (data, activityId) {
+    var list = data.activityMasters || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].activityId === activityId) return list[i];
+    }
+    return null;
+  };
+
+  /* 記録集合からステータス合計を求める */
+  G.statsFromRecords = function (records, settings) {
+    var init = U.num(settings.growth.initialStat, 10);
+    var stats = {};
+    ODL.STATS.forEach(function (s) { stats[s] = init; });
+    (records || []).forEach(function (r) {
+      ODL.STATS.forEach(function (s) {
+        stats[s] += U.num(r.statGrowth && r.statGrowth[s], 0);
+      });
+    });
+    ODL.STATS.forEach(function (s) { stats[s] = U.round(stats[s], 4); });
+    return stats;
+  };
+
+  /* 記録集合からPB表を求める */
+  G.pbsFromRecords = function (records, data) {
+    var masters = G.masterMap(data);
+    var pbs = {};
+    G.sortRecords(records).forEach(function (r) {
+      var m = masters[r.activityId];
+      if (!m) return;
+      var v = C.pbValue(m, r.input || {});
+      if (v <= 0) return;
+      var cur = pbs[r.activityId];
+      if (!cur || v > U.num(cur.value, 0) + 1e-9) {
+        pbs[r.activityId] = {
+          activityId: r.activityId,
+          value: U.round(v, 4),
+          label: C.pbLabel(m, r),
+          recordId: r.id,
+          date: r.date,
+          input: U.clone(r.input || {})
+        };
+      }
+    });
+    return pbs;
+  };
+
+  /* 指定した記録より「前」の時点のステータス・PB（編集時の再計算に使う） */
+  G.snapshotBefore = function (data, record) {
+    var sorted = G.sortRecords(data.trainingRecords);
+    var before = [];
+    for (var i = 0; i < sorted.length; i++) {
+      var r = sorted[i];
+      if (record && r.id === record.id) break;
+      if (record && !G.isBefore(r, record)) break;
+      before.push(r);
+    }
+    return {
+      stats: G.statsFromRecords(before, data.settings),
+      pbs: G.pbsFromRecords(before, data),
+      dates: before.map(function (r) { return r.date; })
+    };
+  };
+
+  G.isBefore = function (a, b) {
+    if (a.date !== b.date) return a.date < b.date;
+    return String(a.createdAt || '') <= String(b.createdAt || '');
+  };
+
+  /* ---------------------------------------------------------------------
+   * 現在のゲーム状態をまとめて計算
+   * ------------------------------------------------------------------- */
+  G.compute = function (data, asOfDate) {
+    var settings = data.settings;
+    var records = data.trainingRecords || [];
+    var asOf = U.isDateStr(asOfDate) ? asOfDate : U.today();
+
+    var cumulativeExp = U.round(U.sum(records, function (r) { return r.exp; }), 2);
+    var levelInfo = C.calculateLevel(cumulativeExp, settings);
+    var stats = G.statsFromRecords(records, settings);
+    var pbs = G.pbsFromRecords(records, data);
+    var streak = C.calculateStreak(
+      records.map(function (r) { return r.date; }), settings, asOf);
+
+    var dateSet = {};
+    records.forEach(function (r) { dateSet[r.date] = (dateSet[r.date] || 0) + 1; });
+
+    var monthKey = U.monthKey(asOf);
+    var monthRecords = records.filter(function (r) { return U.monthKey(r.date) === monthKey; });
+    var monthDays = {};
+    monthRecords.forEach(function (r) { monthDays[r.date] = true; });
+
+    var todayRecords = G.sortRecords(records.filter(function (r) { return r.date === asOf; }));
+
+    return {
+      asOf: asOf,
+      cumulativeExp: cumulativeExp,
+      level: levelInfo.level,
+      levelInfo: levelInfo,
+      stats: stats,
+      streak: streak,
+      pbs: pbs,
+      totalRecords: records.length,
+      totalLoad: U.round(U.sum(records, function (r) { return r.load; }), 2),
+      totalDays: Object.keys(dateSet).length,
+      dateCounts: dateSet,
+      monthRecordCount: monthRecords.length,
+      monthDayCount: Object.keys(monthDays).length,
+      todayRecords: todayRecords,
+      todayExp: U.round(U.sum(todayRecords, function (r) { return r.exp; }), 2)
+    };
+  };
+
+  /* ---------------------------------------------------------------------
+   * 記録1件を計算して「確定」させる
+   *   snapshot: その記録の直前時点のステータス・PB・記録日一覧
+   * ------------------------------------------------------------------- */
+  G.buildRecord = function (data, params, snapshot) {
+    var master = G.findMaster(data, params.activityId);
+    if (!master) throw new Error('ACTIVITY_NOT_FOUND');
+
+    var settings = data.settings;
+    var input = {};
+    var fields = (ODL.INPUT_TYPES[master.inputType] || ODL.INPUT_TYPES.reps).fields;
+    fields.forEach(function (f) {
+      var v = params.input ? params.input[f] : undefined;
+      if (v === '' || v === null || v === undefined) return;
+      input[f] = U.num(v, 0);
+    });
+
+    var loadRes = C.calculateLoad(master, input, settings);
+
+    /* PB判定は「この記録より前のPB」と比較する */
+    var currentPb = snapshot.pbs[master.activityId] || null;
+    var isPb = settings.pb.enabled && C.isNewPersonalBest(master, input, currentPb);
+
+    /* ストリークはこの記録の日付時点で、この記録自身も含めて評価する */
+    var dates = snapshot.dates.slice();
+    dates.push(params.date);
+    var streak = C.calculateStreak(dates, settings, params.date);
+
+    var expRes = C.calculateExp(loadRes.load, master, settings, {
+      streakDays: streak.current,
+      isPersonalBest: isPb
+    });
+
+    var statGrowth = C.calculateStatGrowth(loadRes.load, master, snapshot.stats, settings);
+
+    var breakdown = expRes.breakdown;
+    breakdown.paceFactor = loadRes.detail.paceFactor;
+    breakdown.pace = loadRes.detail.pace;
+    breakdown.previousPb = currentPb ? currentPb.value : null;
+
+    return {
+      activityId: master.activityId,
+      date: params.date,
+      input: input,
+      value: C.pbValue(master, input),
+      unit: master.unit,
+      load: loadRes.load,
+      exp: expRes.exp,
+      expBreakdown: breakdown,
+      statGrowth: statGrowth,
+      isPersonalBest: isPb,
+      note: typeof params.note === 'string' ? params.note : '',
+      calcVersion: ODL.CALC_VERSION,
+      _streak: streak,
+      _master: master
+    };
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/repository.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / repository.js
+ *
+ * データアクセス層。アプリ内でデータを読み書きする唯一の窓口。
+ * UI は localStorage を直接触らず、必ずここを経由する。
+ *
+ *   UI → Repository → Storage
+ *
+ * 起動時の流れ:
+ *   読込 → schemaVersion確認 → (必要なら自動バックアップ→migration) → 正規化 → 保存
+ *   どこかで失敗したら、元データには手を触れずにエラー状態を返す。
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var S = ODL.Schema;
+  var St = ODL.Storage;
+  var G = ODL.GameState;
+  var C = ODL.Calculator;
+
+  var data = null;
+  var status = { state: 'unloaded' };
+  var listeners = [];
+
+  var Repo = ODL.Repository = {
+
+    /* ---------------- 状態 ---------------- */
+    get data() { return data; },
+    get status() { return status; },
+    isLoaded: function () { return !!data; },
+
+    on: function (fn) { listeners.push(fn); return function () { Repo.off(fn); }; },
+    off: function (fn) { listeners = listeners.filter(function (f) { return f !== fn; }); },
+    emit: function (reason, payload) {
+      listeners.slice().forEach(function (fn) {
+        try { fn(reason, payload); } catch (e) { console.error(e); }
+      });
+    },
+
+    /* ---------------- 自動バックアップ ---------------- */
+    listAutoBackups: function () {
+      return St.keys()
+        .filter(function (k) { return k.indexOf(ODL.AUTO_BACKUP_PREFIX) === 0; })
+        .sort()
+        .reverse()
+        .map(function (k) {
+          return { key: k, at: k.slice(ODL.AUTO_BACKUP_PREFIX.length) };
+        });
+    },
+
+    createAutoBackup: function (rawString, tag) {
+      if (!rawString) return null;
+      var stamp = new Date().toISOString().replace(/[:.]/g, '-') + (tag ? '_' + tag : '');
+      var key = ODL.AUTO_BACKUP_PREFIX + stamp;
+      try {
+        St.writeRaw(key, rawString);
+      } catch (e) {
+        /* バックアップが取れなくても本体処理は続行する（ただし記録は残す） */
+        console.warn('auto backup failed', e);
+        return null;
+      }
+      /* 古いものを整理 */
+      var all = Repo.listAutoBackups();
+      all.slice(ODL.AUTO_BACKUP_KEEP).forEach(function (b) { St.remove(b.key); });
+      return key;
+    },
+
+    readAutoBackup: function (key) {
+      var raw = St.readRaw(key);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch (e) { return null; }
+    },
+
+    /* ---------------- 読み込み ---------------- */
+    load: function () {
+      var res = St.readJson(ODL.STORAGE_KEY);
+
+      /* 1) まだ何も保存されていない → 新規作成 */
+      if (!res.found) {
+        data = S.createEmptyData();
+        Repo.refreshDerived();
+        var w = Repo.persist('init');
+        status = { state: w.ok ? 'new' : 'readonly', persistError: w.ok ? null : w.error };
+        return status;
+      }
+
+      /* 2) JSONが壊れている → 絶対に上書きしない */
+      if (res.error) {
+        data = null;
+        status = {
+          state: 'corrupt',
+          error: res.error,
+          rawLength: res.raw ? res.raw.length : 0,
+          backups: Repo.listAutoBackups()
+        };
+        return status;
+      }
+
+      var version = S.readVersion(res.data);
+      var migrated = false, steps = [];
+
+      /* 3) 必要なら migration。その前に必ず現状のバックアップを取る */
+      if (version !== ODL.CURRENT_SCHEMA_VERSION) {
+        var backupKey = null;
+        try {
+          backupKey = Repo.createAutoBackup(res.raw, 'premigration');
+        } catch (e) { /* 続行 */ }
+
+        var out;
+        try {
+          out = S.migrate(res.data);
+        } catch (e) {
+          /* migration失敗: 元データはそのまま。アプリは復旧画面を出す */
+          data = null;
+          status = {
+            state: 'migration_failed',
+            error: String(e && e.message || e),
+            fromVersion: version,
+            toVersion: ODL.CURRENT_SCHEMA_VERSION,
+            backupKey: backupKey,
+            backups: Repo.listAutoBackups()
+          };
+          return status;
+        }
+        migrated = out.migrated;
+        steps = out.steps;
+        res.data = out.data;
+      }
+
+      /* 4) 正規化して採用 */
+      data = S.normalize(res.data);
+      if (migrated) {
+        data.meta.lastMigrationAt = U.nowIso();
+      }
+      Repo.refreshDerived();
+
+      var wr = Repo.persist(migrated ? 'migration' : 'normalize');
+      status = {
+        state: wr.ok ? 'ok' : 'readonly',
+        migrated: migrated,
+        steps: steps,
+        persistError: wr.ok ? null : wr.error
+      };
+      return status;
+    },
+
+    /* 壊れたデータを退避して新規スタート（ユーザーが明示的に選んだときだけ） */
+    quarantineAndStartFresh: function () {
+      var raw = St.readRaw(ODL.STORAGE_KEY);
+      if (raw) Repo.createAutoBackup(raw, 'corrupt');
+      data = S.createEmptyData();
+      Repo.refreshDerived();
+      var w = Repo.persist('fresh');
+      status = { state: w.ok ? 'ok' : 'readonly', persistError: w.ok ? null : w.error };
+      Repo.emit('reset');
+      return status;
+    },
+
+    /* ---------------- 保存 ---------------- */
+    persist: function (reason) {
+      if (!data) return { ok: false, error: 'NO_DATA' };
+      data.updatedAt = U.nowIso();
+      data.appVersion = ODL.APP_VERSION;
+      data.schemaVersion = ODL.CURRENT_SCHEMA_VERSION;
+      var res = St.writeJson(ODL.STORAGE_KEY, data);
+      if (!res.ok) {
+        console.error('保存に失敗しました', res.error, reason);
+      }
+      return res;
+    },
+
+    save: function (reason) {
+      var res = Repo.persist(reason);
+      Repo.emit('change', { reason: reason, saveResult: res });
+      return res;
+    },
+
+    /* 派生データ（PB）を記録から再計算する */
+    refreshDerived: function () {
+      if (!data) return;
+      data.personalBests = G.pbsFromRecords(data.trainingRecords, data);
+    },
+
+    state: function (asOf) {
+      return G.compute(data, asOf);
+    },
+
+    /* ---------------- トレーニング記録 ---------------- */
+    addTrainingRecord: function (params) {
+      var master = G.findMaster(data, params.activityId);
+      if (!master) return { ok: false, errors: ['種目が見つかりません。'] };
+
+      var v = C.validateInput(master, params.input);
+      if (!v.ok) return { ok: false, errors: v.errors };
+
+      var date = U.isDateStr(params.date) ? params.date : U.today();
+      var now = U.nowIso();
+      var pseudo = { id: null, date: date, createdAt: now };
+      var snapshot = G.snapshotBefore(data, pseudo);
+
+      var built = G.buildRecord(data, { activityId: master.activityId, date: date, input: params.input, note: params.note }, snapshot);
+      if (built.load <= 0) return { ok: false, errors: ['入力値から負荷を計算できませんでした。'] };
+
+      var streakInfo = built._streak;
+      delete built._streak;
+      delete built._master;
+
+      var levelBefore = C.calculateLevel(
+        U.sum(data.trainingRecords, function (r) { return r.exp; }), data.settings).level;
+
+      var record = S.normalizeRecord(built);
+      record.id = U.uuid();
+      record.createdAt = now;
+      record.updatedAt = now;
+
+      data.trainingRecords.push(record);
+      Repo.refreshDerived();
+      var saveRes = Repo.save('add-record');
+
+      var st = Repo.state();
+      return {
+        ok: true,
+        record: record,
+        master: master,
+        streak: streakInfo,
+        levelBefore: levelBefore,
+        levelAfter: st.level,
+        levelUp: st.level > levelBefore,
+        state: st,
+        saveResult: saveRes
+      };
+    },
+
+    updateTrainingRecord: function (id, params) {
+      var idx = -1;
+      for (var i = 0; i < data.trainingRecords.length; i++) {
+        if (data.trainingRecords[i].id === id) { idx = i; break; }
+      }
+      if (idx < 0) return { ok: false, errors: ['記録が見つかりません。'] };
+
+      var old = data.trainingRecords[idx];
+      var activityId = params.activityId || old.activityId;
+      var master = G.findMaster(data, activityId);
+      if (!master) return { ok: false, errors: ['種目が見つかりません。'] };
+
+      var v = C.validateInput(master, params.input);
+      if (!v.ok) return { ok: false, errors: v.errors };
+
+      var date = U.isDateStr(params.date) ? params.date : old.date;
+      /* 編集対象を一旦除いた状態で、その時点のスナップショットを取る */
+      var without = data.trainingRecords.filter(function (r) { return r.id !== id; });
+      var backup = data.trainingRecords;
+      data.trainingRecords = without;
+      var snapshot;
+      try {
+        snapshot = G.snapshotBefore(data, { id: id, date: date, createdAt: old.createdAt });
+      } finally {
+        data.trainingRecords = backup;
+      }
+
+      var built = G.buildRecord(data, {
+        activityId: activityId, date: date, input: params.input,
+        note: params.note !== undefined ? params.note : old.note
+      }, snapshot);
+      delete built._streak;
+      delete built._master;
+
+      var updated = S.normalizeRecord(built);
+      updated.id = old.id;
+      updated.createdAt = old.createdAt;
+      updated.updatedAt = U.nowIso();
+
+      data.trainingRecords[idx] = updated;
+      Repo.refreshDerived();
+      var saveRes = Repo.save('update-record');
+      return { ok: true, record: updated, saveResult: saveRes };
+    },
+
+    deleteTrainingRecord: function (id) {
+      var before = data.trainingRecords.length;
+      data.trainingRecords = data.trainingRecords.filter(function (r) { return r.id !== id; });
+      if (data.trainingRecords.length === before) return { ok: false, errors: ['記録が見つかりません。'] };
+      Repo.refreshDerived();
+      var saveRes = Repo.save('delete-record');
+      return { ok: true, saveResult: saveRes };
+    },
+
+    /* 設定変更後などに、全記録を現在の計算式で計算し直す（上級者向け） */
+    recalculateAllRecords: function () {
+      var raw = St.readRaw(ODL.STORAGE_KEY);
+      Repo.createAutoBackup(raw, 'recalc');
+
+      var sorted = G.sortRecords(data.trainingRecords);
+      var rebuilt = [];
+      var working = { trainingRecords: [], activityMasters: data.activityMasters, settings: data.settings };
+      var skipped = 0;
+
+      sorted.forEach(function (r) {
+        var master = G.findMaster(data, r.activityId);
+        if (!master) { rebuilt.push(U.clone(r)); skipped++; return; }
+        var snapshot = {
+          stats: G.statsFromRecords(rebuilt, data.settings),
+          pbs: G.pbsFromRecords(rebuilt, data),
+          dates: rebuilt.map(function (x) { return x.date; })
+        };
+        var built = G.buildRecord(data, {
+          activityId: r.activityId, date: r.date, input: r.input, note: r.note
+        }, snapshot);
+        delete built._streak;
+        delete built._master;
+        var next = S.normalizeRecord(built);
+        next.id = r.id;
+        next.createdAt = r.createdAt;
+        next.updatedAt = U.nowIso();
+        rebuilt.push(next);
+      });
+
+      data.trainingRecords = rebuilt;
+      Repo.refreshDerived();
+      var saveRes = Repo.save('recalculate');
+      return { ok: true, count: rebuilt.length, skipped: skipped, saveResult: saveRes };
+    },
+
+    /* ---------------- 身体データ ---------------- */
+    addBodyRecord: function (params) {
+      var values = {};
+      var any = false;
+      Object.keys(params.values || {}).forEach(function (k) {
+        var raw = params.values[k];
+        if (raw === '' || raw === null || raw === undefined) return;
+        var n = U.num(raw, NaN);
+        if (!isFinite(n) || n <= 0) return;
+        values[k] = U.round(n, 2);
+        any = true;
+      });
+      if (!any) return { ok: false, errors: ['少なくとも1つの項目を入力してください。'] };
+
+      var date = U.isDateStr(params.date) ? params.date : U.today();
+      var rec = S.normalizeBodyRecord({
+        id: params.id || U.uuid(), date: date, values: values,
+        note: params.note, createdAt: U.nowIso()
+      });
+
+      if (params.id) {
+        var found = false;
+        data.bodyRecords = data.bodyRecords.map(function (r) {
+          if (r.id !== params.id) return r;
+          found = true;
+          rec.createdAt = r.createdAt;
+          rec.updatedAt = U.nowIso();
+          return rec;
+        });
+        if (!found) data.bodyRecords.push(rec);
+      } else {
+        data.bodyRecords.push(rec);
+      }
+      var saveRes = Repo.save('body-record');
+      return { ok: true, record: rec, saveResult: saveRes };
+    },
+
+    deleteBodyRecord: function (id) {
+      var before = data.bodyRecords.length;
+      data.bodyRecords = data.bodyRecords.filter(function (r) { return r.id !== id; });
+      if (data.bodyRecords.length === before) return { ok: false, errors: ['記録が見つかりません。'] };
+      var saveRes = Repo.save('delete-body-record');
+      return { ok: true, saveResult: saveRes };
+    },
+
+    /* ---------------- マスタ ---------------- */
+    upsertActivityMaster: function (master) {
+      var norm = S.normalizeMaster(master, data.activityMasters.length);
+      var errors = [];
+      if (!norm.name) errors.push('種目名を入力してください。');
+      if (!(norm.loadCoefficient > 0)) errors.push('負荷係数は0より大きい値にしてください。');
+      if (!(norm.expCoefficient > 0)) errors.push('EXP係数は0より大きい値にしてください。');
+      var allocTotal = 0;
+      ODL.STATS.forEach(function (s) { allocTotal += U.num(norm.statAllocation[s], 0); });
+      if (allocTotal <= 0) errors.push('ステータス配分を1つ以上設定してください。');
+      if (errors.length) return { ok: false, errors: errors };
+
+      var idx = -1;
+      for (var i = 0; i < data.activityMasters.length; i++) {
+        if (data.activityMasters[i].activityId === norm.activityId) { idx = i; break; }
+      }
+      if (idx >= 0) {
+        norm.builtIn = data.activityMasters[idx].builtIn;
+        data.activityMasters[idx] = norm;
+      } else {
+        data.activityMasters.push(norm);
+      }
+      data.activityMasters.sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+      var saveRes = Repo.save('master');
+      return { ok: true, master: norm, saveResult: saveRes };
+    },
+
+    /* 種目は削除せず「無効化」する。過去の記録が参照しているため */
+    setActivityActive: function (activityId, active) {
+      data.activityMasters.forEach(function (m) {
+        if (m.activityId === activityId) m.active = !!active;
+      });
+      var saveRes = Repo.save('master-active');
+      return { ok: true, saveResult: saveRes };
+    },
+
+    deleteActivityMaster: function (activityId) {
+      var used = data.trainingRecords.some(function (r) { return r.activityId === activityId; });
+      if (used) {
+        return { ok: false, errors: ['この種目には記録があるため削除できません。「無効にする」を使ってください。'] };
+      }
+      data.activityMasters = data.activityMasters.filter(function (m) { return m.activityId !== activityId; });
+      var saveRes = Repo.save('master-delete');
+      return { ok: true, saveResult: saveRes };
+    },
+
+    upsertBodyMetric: function (metric) {
+      var norm = S.normalizeMetric(metric, data.bodyMetrics.length);
+      if (!norm.name) return { ok: false, errors: ['項目名を入力してください。'] };
+      var idx = -1;
+      for (var i = 0; i < data.bodyMetrics.length; i++) {
+        if (data.bodyMetrics[i].metricId === norm.metricId) { idx = i; break; }
+      }
+      if (idx >= 0) { norm.builtIn = data.bodyMetrics[idx].builtIn; data.bodyMetrics[idx] = norm; }
+      else data.bodyMetrics.push(norm);
+      data.bodyMetrics.sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+      var saveRes = Repo.save('metric');
+      return { ok: true, metric: norm, saveResult: saveRes };
+    },
+
+    /* ---------------- 設定 ---------------- */
+    updateSettings: function (patch) {
+      data.settings = U.mergeDefaults(
+        U.mergeDefaults(patch, data.settings), ODL.DEFAULT_SETTINGS);
+      if (patch && patch.streak && Array.isArray(patch.streak.bonusTable)) {
+        data.settings.streak.bonusTable = patch.streak.bonusTable
+          .map(function (b) { return { days: U.num(b.days, 0), rate: U.num(b.rate, 0) }; })
+          .filter(function (b) { return b.days > 0; })
+          .sort(function (a, b) { return a.days - b.days; });
+      }
+      var saveRes = Repo.save('settings');
+      return { ok: true, saveResult: saveRes };
+    },
+
+    updateProfile: function (patch) {
+      data.userProfile = U.mergeDefaults(patch, data.userProfile);
+      var saveRes = Repo.save('profile');
+      return { ok: true, saveResult: saveRes };
+    },
+
+    resetSettingsToDefault: function () {
+      data.settings = U.clone(ODL.DEFAULT_SETTINGS);
+      return Repo.save('settings-reset');
+    },
+
+    /* ---------------- バックアップ / 復元 ---------------- */
+    exportObject: function () {
+      var out = U.clone(data);
+      out.exportedAt = U.nowIso();
+      out.exportedBy = ODL.APP_NAME + ' v' + ODL.APP_VERSION;
+      return out;
+    },
+
+    exportString: function () {
+      return JSON.stringify(Repo.exportObject(), null, 2);
+    },
+
+    backupFileName: function () {
+      return ODL.BACKUP_FILE_PREFIX + U.today() + '.json';
+    },
+
+    markBackedUp: function () {
+      data.meta.lastBackupAt = U.nowIso();
+      Repo.save('backup-mark');
+    },
+
+    /* JSON文字列から復元。現在のデータは事前に自動バックアップする */
+    importFromString: function (text, options) {
+      options = options || {};
+      var parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (e) {
+        return { ok: false, errors: ['ファイルがJSONとして読み込めませんでした。バックアップファイルを選び直してください。'] };
+      }
+
+      var check = S.validateImport(parsed);
+      if (!check.ok) return { ok: false, errors: check.errors };
+
+      var migrated;
+      try {
+        migrated = S.migrate(parsed);
+      } catch (e) {
+        var msg = String(e && e.message || e);
+        if (msg.indexOf('SCHEMA_VERSION_TOO_NEW') === 0) {
+          return { ok: false, errors: ['このバックアップは、より新しいバージョンのアプリで作られています。アプリを更新してから読み込んでください。'] };
+        }
+        return { ok: false, errors: ['データの変換に失敗しました。現在のデータは変更していません。（' + msg + '）'] };
+      }
+
+      var normalized;
+      try {
+        normalized = S.normalize(migrated.data);
+      } catch (e) {
+        return { ok: false, errors: ['データの形式を確認できませんでした。現在のデータは変更していません。'] };
+      }
+
+      if (!normalized.trainingRecords.length && !normalized.bodyRecords.length && !options.allowEmpty) {
+        return {
+          ok: false, needsConfirmEmpty: true,
+          errors: ['このバックアップにはトレーニング記録が1件も入っていません。本当に復元しますか？']
+        };
+      }
+
+      /* 上書き前に必ず現在のデータを自動バックアップ */
+      var raw = St.readRaw(ODL.STORAGE_KEY);
+      var backupKey = Repo.createAutoBackup(raw, 'preimport');
+
+      var prev = data;
+      data = normalized;
+      Repo.refreshDerived();
+      var saveRes = Repo.persist('import');
+      if (!saveRes.ok) {
+        data = prev;  /* 保存できなかったら元に戻す */
+        return { ok: false, errors: ['復元したデータを保存できませんでした。空き容量を確認してください。現在のデータはそのままです。'] };
+      }
+      Repo.emit('change', { reason: 'import' });
+
+      return {
+        ok: true,
+        migrated: migrated.migrated,
+        steps: migrated.steps,
+        backupKey: backupKey,
+        counts: {
+          training: normalized.trainingRecords.length,
+          body: normalized.bodyRecords.length,
+          masters: normalized.activityMasters.length
+        }
+      };
+    },
+
+    restoreAutoBackup: function (key) {
+      var raw = St.readRaw(key);
+      if (!raw) return { ok: false, errors: ['バックアップが見つかりません。'] };
+      return Repo.importFromString(raw, { allowEmpty: true });
+    },
+
+    /* ---------------- 初期化 ---------------- */
+    resetAll: function (keepMasters) {
+      var raw = St.readRaw(ODL.STORAGE_KEY);
+      Repo.createAutoBackup(raw, 'reset');
+      var fresh = S.createEmptyData();
+      if (keepMasters && data) {
+        fresh.activityMasters = U.clone(data.activityMasters);
+        fresh.bodyMetrics = U.clone(data.bodyMetrics);
+        fresh.settings = U.clone(data.settings);
+      }
+      data = fresh;
+      Repo.refreshDerived();
+      var saveRes = Repo.persist('reset');
+      Repo.emit('change', { reason: 'reset' });
+      return { ok: saveRes.ok, saveResult: saveRes };
+    }
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/common.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/common.js
+ * DOM生成・シート・トースト・確認ダイアログなどの共通UI部品
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var UI = ODL.UI = ODL.UI || {};
+
+  /* ---------------- DOM ---------------- */
+  UI.el = function (tag, attrs, children) {
+    var e = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (v === null || v === undefined || v === false) return;
+        if (k === 'class') e.className = v;
+        else if (k === 'html') e.innerHTML = v;
+        else if (k === 'text') e.textContent = v;
+        else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+        else if (k.indexOf('on') === 0 && typeof v === 'function') e.addEventListener(k.slice(2), v);
+        else if (k === 'dataset') Object.keys(v).forEach(function (d) { e.dataset[d] = v[d]; });
+        else e.setAttribute(k, v === true ? '' : v);
+      });
+    }
+    UI.append(e, children);
+    return e;
+  };
+
+  UI.append = function (parent, children) {
+    if (children === null || children === undefined || children === false) return parent;
+    if (Array.isArray(children)) {
+      children.forEach(function (c) { UI.append(parent, c); });
+      return parent;
+    }
+    if (children instanceof Node) parent.appendChild(children);
+    else parent.appendChild(document.createTextNode(String(children)));
+    return parent;
+  };
+
+  UI.clear = function (node) { while (node.firstChild) node.removeChild(node.firstChild); return node; };
+
+  UI.$ = function (sel, root) { return (root || document).querySelector(sel); };
+
+  /* ---------------- ステータス表記 ---------------- */
+  UI.statLabel = function (stat, settings) {
+    var mode = (settings && settings.display && settings.display.statLabel) || 'both';
+    var ja = ODL.STAT_LABELS[stat];
+    if (mode === 'ja') return ja;
+    if (mode === 'abbr') return stat;
+    return stat;   /* both: 略称を主、日本語は副ラベルで出す */
+  };
+  UI.statSubLabel = function (stat, settings) {
+    var mode = (settings && settings.display && settings.display.statLabel) || 'both';
+    if (mode === 'both') return ODL.STAT_LABELS[stat];
+    return null;
+  };
+
+  /* ---------------- トースト ---------------- */
+  UI.toast = function (message, kind, ms) {
+    var host = document.getElementById('toast-host');
+    if (!host) return;
+    var t = UI.el('div', { class: 'toast' + (kind ? ' ' + kind : ''), text: message });
+    host.appendChild(t);
+    setTimeout(function () {
+      t.style.transition = 'opacity .25s, transform .25s';
+      t.style.opacity = '0';
+      t.style.transform = 'translateY(8px)';
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 260);
+    }, ms || 2400);
+  };
+
+  /* ---------------- シート（ボトムモーダル） ---------------- */
+  var openSheets = [];
+
+  UI.sheet = function (opts) {
+    var backdrop = UI.el('div', { class: 'sheet-backdrop' });
+    var sheet = UI.el('div', { class: 'sheet' });
+    backdrop.appendChild(sheet);
+
+    sheet.appendChild(UI.el('div', { class: 'grip' }));
+    if (opts.title) sheet.appendChild(UI.el('h2', { text: opts.title }));
+    if (opts.content) UI.append(sheet, opts.content);
+
+    var api = {
+      root: sheet,
+      close: function () {
+        if (!backdrop.parentNode) return;
+        backdrop.style.transition = 'opacity .18s';
+        backdrop.style.opacity = '0';
+        setTimeout(function () {
+          if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+        }, 190);
+        openSheets = openSheets.filter(function (s) { return s !== api; });
+        if (typeof opts.onClose === 'function') opts.onClose();
+      }
+    };
+
+    if (opts.actions) {
+      var bar = UI.el('div', { class: 'sheet-actions' });
+      opts.actions.forEach(function (a) {
+        bar.appendChild(UI.el('button', {
+          class: 'btn ' + (a.kind || ''), text: a.label,
+          onclick: function () {
+            if (typeof a.onClick === 'function') { if (a.onClick(api) === false) return; }
+            if (a.keepOpen !== true) api.close();
+          }
+        }));
+      });
+      sheet.appendChild(bar);
+    }
+
+    backdrop.addEventListener('click', function (ev) {
+      if (ev.target === backdrop && opts.dismissible !== false) api.close();
+    });
+
+    document.body.appendChild(backdrop);
+    openSheets.push(api);
+    return api;
+  };
+
+  UI.closeAllSheets = function () {
+    openSheets.slice().forEach(function (s) { s.close(); });
+  };
+
+  /* ---------------- 確認ダイアログ ---------------- */
+  UI.confirm = function (opts) {
+    return new Promise(function (resolve) {
+      var body = [];
+      if (opts.message) body.push(UI.el('p', { class: 'muted', style: { fontSize: '14px', lineHeight: '1.7', color: 'var(--text-2)' }, text: opts.message }));
+      if (opts.warning) body.push(UI.el('div', { class: 'warnbox', text: opts.warning }));
+
+      var confirmInput = null;
+      if (opts.requireText) {
+        confirmInput = UI.el('input', { type: 'text', placeholder: opts.requireText, autocapitalize: 'off', autocorrect: 'off' });
+        body.push(UI.el('div', { class: 'field mt16' }, [
+          UI.el('label', { text: '確認のため「' + opts.requireText + '」と入力してください' }),
+          confirmInput
+        ]));
+      }
+
+      var decided = false;
+      UI.sheet({
+        title: opts.title || '確認',
+        content: body,
+        onClose: function () { if (!decided) resolve(false); },
+        actions: [
+          { label: opts.cancelLabel || 'キャンセル', onClick: function () { decided = true; resolve(false); } },
+          {
+            label: opts.okLabel || 'OK',
+            kind: opts.danger ? 'danger' : 'primary',
+            onClick: function () {
+              if (confirmInput && confirmInput.value.trim() !== opts.requireText) {
+                UI.toast('入力が一致しません', 'err');
+                return false;
+              }
+              decided = true; resolve(true);
+            }
+          }
+        ]
+      });
+    });
+  };
+
+  /* ---------------- 汎用パーツ ---------------- */
+  UI.card = function (title, children, extra) {
+    var c = UI.el('div', { class: 'card' + (extra && extra.tight ? ' tight' : '') });
+    if (title) {
+      var h = UI.el('div', { class: 'card-title' });
+      h.appendChild(UI.el('span', { text: title }));
+      if (extra && extra.action) h.appendChild(extra.action);
+      c.appendChild(h);
+    }
+    UI.append(c, children);
+    return c;
+  };
+
+  UI.empty = function (text) { return UI.el('div', { class: 'empty', text: text }); };
+
+  UI.metric = function (value, label, cls) {
+    return UI.el('div', { class: 'metric ' + (cls || '') }, [
+      UI.el('div', { class: 'v', html: value }),
+      UI.el('div', { class: 'k', text: label })
+    ]);
+  };
+
+  UI.kv = function (k, v) {
+    return UI.el('div', { class: 'kv' }, [
+      UI.el('span', { class: 'k', text: k }),
+      UI.el('span', { class: 'v', html: v })
+    ]);
+  };
+
+  /* ステータス行（ホーム用） */
+  UI.statRow = function (stat, value, settings, maxOverride) {
+    var max = maxOverride || U.num(settings.display.statBarMax, 60);
+    var pct = U.clamp((U.num(value, 0) / max) * 100, 0, 100);
+    var sub = UI.statSubLabel(stat, settings);
+    return UI.el('div', { class: 'stat-row stat-' + stat }, [
+      UI.el('div', { class: 'stat-name' }, [
+        UI.el('span', { text: UI.statLabel(stat, settings) }),
+        sub ? UI.el('span', { class: 'ja', text: sub }) : null
+      ]),
+      UI.el('div', { class: 'stat-bar' }, [UI.el('i', { style: { width: pct + '%' } })]),
+      UI.el('div', { class: 'stat-val', text: U.fmt(value, 1) })
+    ]);
+  };
+
+  /* トグルスイッチ */
+  UI.toggle = function (checked, onChange) {
+    var input = UI.el('input', { type: 'checkbox', onchange: function () { onChange(input.checked); } });
+    input.checked = !!checked;
+    return UI.el('label', { class: 'toggle' }, [
+      input, UI.el('span', { class: 'track' }), UI.el('span', { class: 'knob' })
+    ]);
+  };
+
+  UI.switchRow = function (label, sub, control) {
+    return UI.el('div', { class: 'switch-row' }, [
+      UI.el('div', {}, [
+        UI.el('div', { class: 'lb', text: label }),
+        sub ? UI.el('div', { class: 'sub', text: sub }) : null
+      ]),
+      UI.el('div', { class: 'ctl' }, control)
+    ]);
+  };
+
+  /* 数値設定行 */
+  UI.numberSetting = function (label, sub, value, opts, onChange) {
+    var input = UI.el('input', {
+      type: 'number', value: value,
+      step: opts.step || 'any', min: opts.min !== undefined ? opts.min : 0,
+      inputmode: 'decimal',
+      onchange: function () {
+        var n = U.num(input.value, NaN);
+        if (!isFinite(n) || (opts.min !== undefined && n < opts.min) || (opts.max !== undefined && n > opts.max)) {
+          UI.toast('値が範囲外です', 'err');
+          input.value = value;
+          return;
+        }
+        onChange(n);
+      }
+    });
+    return UI.switchRow(label, sub, input);
+  };
+
+  /* 簡易折れ線グラフ（SVG） */
+  UI.lineChart = function (series, opts) {
+    opts = opts || {};
+    var W = 320, H = 160, padL = 38, padR = 10, padT = 12, padB = 22;
+    var all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.y); }); });
+    if (!all.length) return UI.empty(opts.emptyText || 'データがありません');
+
+    var minY = Math.min.apply(null, all), maxY = Math.max.apply(null, all);
+    if (minY === maxY) { minY -= 1; maxY += 1; }
+    var padY = (maxY - minY) * 0.12;
+    minY -= padY; maxY += padY;
+
+    var xs = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { xs.push(p.x); }); });
+    var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    if (minX === maxX) { minX -= 1; maxX += 1; }
+
+    function px(x) { return padL + ((x - minX) / (maxX - minX)) * (W - padL - padR); }
+    function py(y) { return padT + (1 - (y - minY) / (maxY - minY)) * (H - padT - padB); }
+
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('class', 'chart');
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    /* グリッド */
+    for (var i = 0; i <= 3; i++) {
+      var yv = minY + (maxY - minY) * (i / 3);
+      var ln = document.createElementNS(ns, 'line');
+      ln.setAttribute('x1', padL); ln.setAttribute('x2', W - padR);
+      ln.setAttribute('y1', py(yv)); ln.setAttribute('y2', py(yv));
+      ln.setAttribute('stroke', '#2a3450'); ln.setAttribute('stroke-width', '1');
+      svg.appendChild(ln);
+      var tx = document.createElementNS(ns, 'text');
+      tx.setAttribute('x', 4); tx.setAttribute('y', py(yv) + 3.5);
+      tx.setAttribute('fill', '#6d7a95'); tx.setAttribute('font-size', '9');
+      tx.textContent = U.fmt(yv, (maxY - minY) > 20 ? 0 : 1);
+      svg.appendChild(tx);
+    }
+
+    series.forEach(function (s) {
+      var pts = s.points.slice().sort(function (a, b) { return a.x - b.x; });
+      var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + px(p.x).toFixed(1) + ' ' + py(p.y).toFixed(1); }).join(' ');
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', s.color || '#4dd9ff');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(path);
+      pts.forEach(function (p) {
+        var c = document.createElementNS(ns, 'circle');
+        c.setAttribute('cx', px(p.x)); c.setAttribute('cy', py(p.y)); c.setAttribute('r', '2.5');
+        c.setAttribute('fill', s.color || '#4dd9ff');
+        svg.appendChild(c);
+      });
+    });
+
+    return svg;
+  };
+
+  /* ファイルダウンロード */
+  UI.downloadText = function (filename, text, mime) {
+    try {
+      var blob = new Blob([text], { type: mime || 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = UI.el('a', { href: url, download: filename });
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 400);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/record.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/record.js
+ * トレーニング記録の入力シートと、記録後のゲーム的フィードバック
+ *   ① 種目選択 → ② 数値入力 → ③ 保存
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator;
+  var G = ODL.GameState;
+  var Repo = ODL.Repository;
+  var UI = ODL.UI;
+
+  var FIELD_META = {
+    reps:        { label: '回数', unit: '回', step: 1, inputmode: 'numeric' },
+    weight:      { label: '重量', unit: 'kg', step: 0.5, inputmode: 'decimal' },
+    minutes:     { label: '時間', unit: '分', step: 1, inputmode: 'numeric' },
+    distance:    { label: '距離', unit: 'km', step: 0.1, inputmode: 'decimal' },
+    durationMin: { label: 'タイム（任意）', unit: '分', step: 1, inputmode: 'decimal' }
+  };
+
+  /* ---------------------------------------------------------------------
+   * 入口
+   * ------------------------------------------------------------------- */
+  UI.openRecordSheet = function (options) {
+    options = options || {};
+    var data = Repo.data;
+    var state = Repo.state();
+
+    if (options.record) {            /* 編集モード */
+      openForm(options.record.activityId, options, null);
+      return;
+    }
+
+    var actives = (data.activityMasters || [])
+      .filter(function (m) { return m.active; })
+      .sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+
+    if (!actives.length) {
+      UI.toast('有効な種目がありません。設定 → 種目マスタで追加してください。', 'err', 3800);
+      return;
+    }
+
+    var sheet = UI.sheet({
+      title: '何をやった？',
+      content: UI.el('div', { class: 'grid-2' }, actives.map(function (m) {
+        var pb = state.pbs[m.activityId];
+        return UI.el('button', {
+          class: 'act-tile',
+          onclick: function () { sheet.close(); openForm(m.activityId, options, null); }
+        }, [
+          UI.el('div', { class: 'em', text: m.icon || '🏋️' }),
+          UI.el('div', { class: 'nm', text: m.name }),
+          UI.el('div', { class: 'pb', text: pb ? 'PB ' + pb.label : '記録なし' })
+        ]);
+      }))
+    });
+  };
+
+  /* ---------------------------------------------------------------------
+   * 入力フォーム
+   * ------------------------------------------------------------------- */
+  function openForm(activityId, options, presetInput) {
+    var data = Repo.data;
+    var master = G.findMaster(data, activityId);
+    if (!master) { UI.toast('種目が見つかりません', 'err'); return; }
+
+    var editing = options.record || null;
+    var state = Repo.state();
+    var pb = state.pbs[activityId];
+
+    var fields = (ODL.INPUT_TYPES[master.inputType] || ODL.INPUT_TYPES.reps).fields;
+    var inputs = {};
+    var content = [];
+
+    /* 日付 */
+    var dateInput = UI.el('input', {
+      type: 'date',
+      value: editing ? editing.date : (options.date || U.today()),
+      max: U.addDays(U.today(), 0)
+    });
+    content.push(UI.el('div', { class: 'field' }, [
+      UI.el('label', { text: '日付' }), dateInput
+    ]));
+
+    /* 数値入力 */
+    fields.forEach(function (f) {
+      var meta = FIELD_META[f];
+      var initial = '';
+      if (editing && editing.input && editing.input[f] !== undefined) initial = editing.input[f];
+      else if (presetInput && presetInput[f] !== undefined) initial = presetInput[f];
+
+      var input = UI.el('input', {
+        type: 'number', step: meta.step, min: '0', inputmode: meta.inputmode,
+        placeholder: '0', value: initial,
+        oninput: updatePreview
+      });
+      inputs[f] = input;
+
+      var wrap = UI.el('div', { class: 'field' }, [
+        UI.el('label', { text: meta.label }),
+        UI.el('div', { class: 'unit-suffix' }, [input, UI.el('span', { text: meta.unit })])
+      ]);
+
+      /* よく使う値のクイックボタン */
+      if (f === fields[0] && master.quickValues && master.quickValues.length) {
+        var quick = UI.el('div', { class: 'quick' }, master.quickValues.map(function (v) {
+          return UI.el('button', {
+            type: 'button', text: v + (master.inputType === 'distance_time' ? 'km' : (master.inputType === 'minutes' ? '分' : '回')),
+            onclick: function () { input.value = v; updatePreview(); }
+          });
+        }));
+        wrap.appendChild(quick);
+      }
+      if (f === 'durationMin') {
+        wrap.appendChild(UI.el('div', { class: 'hint', text: '未入力でもOK。入力するとペース補正がかかります（基準 ' + U.fmt(data.settings.pace.basePaceMinPerKm, 0) + '分/km）。' }));
+      }
+      content.push(wrap);
+    });
+
+    /* メモ */
+    var noteInput = UI.el('input', { type: 'text', maxlength: '120', placeholder: '（任意）', value: editing ? editing.note : '' });
+    content.push(UI.el('div', { class: 'field' }, [UI.el('label', { text: 'メモ' }), noteInput]));
+
+    /* プレビュー */
+    var preview = UI.el('div', { class: 'card tight', style: { marginBottom: '0' } });
+    content.push(preview);
+
+    if (pb && !editing) {
+      content.push(UI.el('div', { class: 'hint', style: { marginTop: '8px' }, text: '現在のベスト: ' + pb.label + '（' + U.formatDateJa(pb.date) + '）' }));
+    }
+
+    var sheet = UI.sheet({
+      title: (editing ? '記録を編集 — ' : '') + (master.icon || '') + ' ' + master.name,
+      content: content,
+      actions: [
+        { label: 'キャンセル' },
+        {
+          label: editing ? '更新する' : '保存する', kind: 'primary', keepOpen: true,
+          onClick: function (api) { submit(api); }
+        }
+      ]
+    });
+
+    /* 最初の入力欄にフォーカス（モバイルではキーボードが出るので編集時のみ） */
+    setTimeout(function () {
+      if (!editing) return;
+      try { inputs[fields[0]].focus(); } catch (e) {}
+    }, 300);
+
+    updatePreview();
+
+    function collect() {
+      var obj = {};
+      fields.forEach(function (f) { obj[f] = inputs[f].value; });
+      return obj;
+    }
+
+    function updatePreview() {
+      UI.clear(preview);
+      var input = {};
+      fields.forEach(function (f) {
+        var n = U.num(inputs[f].value, NaN);
+        if (isFinite(n) && n > 0) input[f] = n;
+      });
+      var v = C.validateInput(master, input);
+      if (!v.ok) {
+        preview.appendChild(UI.el('div', { class: 'muted', text: '数値を入力すると獲得EXPの目安が表示されます。' }));
+        return;
+      }
+
+      var date = dateInput.value || U.today();
+      var pseudo = { id: editing ? editing.id : null, date: date, createdAt: editing ? editing.createdAt : U.nowIso() };
+      var withoutSelf = editing
+        ? data.trainingRecords.filter(function (r) { return r.id !== editing.id; })
+        : data.trainingRecords;
+
+      var backup = data.trainingRecords;
+      data.trainingRecords = withoutSelf;
+      var snap, built;
+      try {
+        snap = G.snapshotBefore(data, pseudo);
+        built = G.buildRecord(data, { activityId: activityId, date: date, input: input }, snap);
+      } catch (e) {
+        data.trainingRecords = backup;
+        preview.appendChild(UI.el('div', { class: 'muted', text: '計算できませんでした。' }));
+        return;
+      }
+      data.trainingRecords = backup;
+
+      var rows = [
+        UI.kv('負荷 Load', U.fmt(built.load, 1)),
+        UI.kv('獲得EXP（予想）', '<span style="color:var(--accent)">+' + U.fmtInt(built.exp) + '</span>')
+      ];
+      if (built.expBreakdown.streakRate > 0) {
+        rows.push(UI.kv('ストリークボーナス', '+' + Math.round(built.expBreakdown.streakRate * 100) + '%'));
+      }
+      if (built.isPersonalBest) {
+        rows.push(UI.kv('PBボーナス', '<span style="color:var(--gold)">+' + Math.round(built.expBreakdown.pbRate * 100) + '%  🎉</span>'));
+      }
+      if (built.expBreakdown.paceFactor && built.expBreakdown.pace) {
+        rows.push(UI.kv('ペース', U.fmt(built.expBreakdown.pace, 2) + ' 分/km（補正 ×' + U.fmt(built.expBreakdown.paceFactor, 2) + '）'));
+      }
+      var growth = ODL.STATS.filter(function (s) { return built.statGrowth[s] > 0; })
+        .map(function (s) { return s + ' +' + U.fmt(built.statGrowth[s], 2); }).join('  ');
+      if (growth) rows.push(UI.kv('ステータス成長', growth));
+
+      UI.append(preview, rows);
+    }
+
+    function submit(api) {
+      var raw = collect();
+      var input = {};
+      fields.forEach(function (f) {
+        if (raw[f] === '' || raw[f] === null || raw[f] === undefined) return;
+        input[f] = U.num(raw[f], 0);
+      });
+
+      var date = dateInput.value;
+      if (!U.isDateStr(date)) { UI.toast('日付を選んでください', 'err'); return; }
+      if (U.diffDays(date, U.today()) < 0) { UI.toast('未来の日付は記録できません', 'err'); return; }
+
+      var params = { activityId: activityId, date: date, input: input, note: noteInput.value.trim() };
+      var res = editing ? Repo.updateTrainingRecord(editing.id, params) : Repo.addTrainingRecord(params);
+
+      if (!res.ok) {
+        UI.toast(res.errors[0], 'err', 3200);
+        return;
+      }
+      if (res.saveResult && !res.saveResult.ok) {
+        UI.toast(saveErrorMessage(res.saveResult.error), 'err', 5000);
+      }
+
+      api.close();
+      if (editing) {
+        UI.toast('記録を更新しました', 'ok');
+        if (typeof options.onSaved === 'function') options.onSaved(res);
+        ODL.App.refresh();
+      } else {
+        ODL.App.refresh();
+        showResult(res, master);
+        if (typeof options.onSaved === 'function') options.onSaved(res);
+      }
+    }
+  }
+
+  function saveErrorMessage(code) {
+    if (code === 'QUOTA_EXCEEDED') return '端末の保存容量がいっぱいです。設定からバックアップを書き出してください。';
+    return '保存に失敗しました。設定からバックアップを書き出して、ブラウザの空き容量を確認してください。';
+  }
+  UI.saveErrorMessage = saveErrorMessage;
+
+  /* ---------------------------------------------------------------------
+   * 記録後のフィードバック
+   * ------------------------------------------------------------------- */
+  function showResult(res, master) {
+    var rec = res.record;
+    var backdrop = UI.el('div', { class: 'result-backdrop' });
+    var box = UI.el('div', { class: 'result' });
+
+    box.appendChild(UI.el('div', { class: 'actname', text: (master.icon || '') + ' ' + master.name + ' ' + C.displayValue(master, rec) }));
+    box.appendChild(UI.el('div', { class: 'exp', html: '+' + U.fmtInt(rec.exp) + '<small>EXP</small>' }));
+
+    var growths = ODL.STATS.filter(function (s) { return rec.statGrowth[s] > 0; });
+    if (growths.length) {
+      box.appendChild(UI.el('div', { class: 'growths' }, growths.map(function (s) {
+        return UI.el('div', {}, [
+          UI.el('span', { style: { color: ODL.STAT_COLORS[s] }, text: s + ' ' + ODL.STAT_LABELS[s] }),
+          UI.el('span', { style: { color: ODL.STAT_COLORS[s] }, text: '+' + U.fmt(rec.statGrowth[s], 2) })
+        ]);
+      })));
+    }
+
+    if (rec.isPersonalBest) {
+      box.appendChild(UI.el('div', { class: 'banner pb', text: '🎉 PERSONAL BEST!' }));
+    }
+    if (res.levelUp) {
+      box.appendChild(UI.el('div', { class: 'banner lvup', text: '⬆ LEVEL UP!  Lv.' + res.levelBefore + ' → Lv.' + res.levelAfter }));
+    }
+    if (res.streak && res.streak.current > 0) {
+      box.appendChild(UI.el('div', { class: 'streak', text: '🔥 ストリーク ' + res.streak.current + '日（トレ' + res.streak.activeDays + '日）' }));
+    }
+
+    var notes = [];
+    if (rec.expBreakdown.streakRate > 0) notes.push('ストリーク +' + Math.round(rec.expBreakdown.streakRate * 100) + '%');
+    if (rec.expBreakdown.pbRate > 0) notes.push('PB +' + Math.round(rec.expBreakdown.pbRate * 100) + '%');
+    notes.push('Load ' + U.fmt(rec.load, 1));
+    box.appendChild(UI.el('div', { class: 'bonus-note', text: notes.join(' ／ ') }));
+
+    var st = res.state;
+    box.appendChild(UI.el('div', { class: 'exp-text', style: { marginTop: '14px', fontSize: '12px', color: 'var(--text-3)' },
+      text: 'Lv.' + st.level + '  次まで ' + U.fmtInt(st.levelInfo.remaining) + ' EXP' }));
+    box.appendChild(UI.el('div', { class: 'expbar', style: { marginTop: '6px' } }, [
+      UI.el('i', { style: { width: (st.levelInfo.progress * 100) + '%' } })
+    ]));
+
+    var close = function () {
+      backdrop.style.transition = 'opacity .2s';
+      backdrop.style.opacity = '0';
+      setTimeout(function () { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }, 210);
+    };
+
+    box.appendChild(UI.el('div', { style: { display: 'flex', gap: '8px', marginTop: '18px' } }, [
+      UI.el('button', { class: 'btn block', text: '続けて記録', onclick: function () { close(); UI.openRecordSheet({ date: rec.date }); } }),
+      UI.el('button', { class: 'btn primary block', text: 'OK', onclick: close })
+    ]));
+
+    backdrop.appendChild(box);
+    backdrop.addEventListener('click', function (e) { if (e.target === backdrop) close(); });
+    document.body.appendChild(backdrop);
+  }
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/home.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/home.js
+ * ホーム＝「ゲームとしての現在状態」が一目で分かるダッシュボード
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator;
+  var G = ODL.GameState;
+  var Repo = ODL.Repository;
+  var UI = ODL.UI;
+
+  UI.views = UI.views || {};
+
+  UI.views.home = function () {
+    var data = Repo.data;
+    var st = Repo.state();
+    var s = data.settings;
+    var root = UI.el('div');
+
+    /* ---- Lv / EXP ---- */
+    var hero = UI.el('div', { class: 'card hero' }, [
+      UI.el('div', { class: 'lv-label', text: 'LEVEL' }),
+      UI.el('div', { class: 'lv-value', html: '<small>Lv.</small>' + st.level }),
+      UI.el('div', { class: 'expbar' }, [
+        UI.el('i', { style: { width: (st.levelInfo.progress * 100) + '%' } })
+      ]),
+      UI.el('div', { class: 'exp-text', html:
+        '<b>' + U.fmtInt(st.cumulativeExp) + '</b> / ' + U.fmtInt(st.levelInfo.nextLevelExp) + ' EXP' +
+        '<br><span style="font-size:11px;color:var(--text-3)">次のレベルまで ' + U.fmtInt(st.levelInfo.remaining) + ' EXP</span>'
+      })
+    ]);
+    root.appendChild(hero);
+
+    /* ---- ステータス ---- */
+    var maxStat = Math.max(U.num(s.display.statBarMax, 60),
+      Math.ceil(Math.max.apply(null, ODL.STATS.map(function (k) { return st.stats[k]; })) / 10) * 10);
+    root.appendChild(UI.card('STATUS', [
+      UI.el('div', { class: 'stats' }, ODL.STATS.map(function (k) {
+        return UI.statRow(k, st.stats[k], s, maxStat);
+      }))
+    ], {
+      action: UI.el('button', {
+        class: 'btn small ghost', text: '詳細 ›',
+        onclick: function () { ODL.App.go('status'); }
+      })
+    }));
+
+    /* ---- 指標 ---- */
+    var streakText = st.streak.alive ? st.streak.current + '日' : '—';
+    root.appendChild(UI.el('div', { class: 'metrics' }, [
+      UI.metric('🔥 ' + streakText, 'ストリーク', 'flame'),
+      UI.metric(String(st.monthRecordCount) + '<span style="font-size:12px"> 回</span>', '今月の記録'),
+      UI.metric(String(st.totalDays) + '<span style="font-size:12px"> 日</span>', '通算トレ日数')
+    ]));
+
+    if (st.streak.alive && st.streak.breaksInDays !== null) {
+      var warn = st.streak.breaksInDays <= 1;
+      root.appendChild(UI.el('div', {
+        class: 'muted center', style: { margin: '10px 0 2px', color: warn ? 'var(--gold)' : 'var(--text-3)' },
+        text: st.streak.daysSinceLast === 0
+          ? '今日も記録済み。連続 ' + st.streak.current + '日目（トレ' + st.streak.activeDays + '日）'
+          : st.streak.breaksInDays === 0
+            ? '今日記録しないとストリークが途切れます'
+            : 'あと ' + st.streak.breaksInDays + '日以内に記録すればストリークは続きます'
+      }));
+    } else if (!st.streak.alive && st.totalRecords > 0) {
+      root.appendChild(UI.el('div', { class: 'muted center', style: { margin: '10px 0 2px' },
+        text: 'ストリークは途切れていますが、Lv・ステータス・記録はそのままです。今日から再開しましょう。' }));
+    }
+
+    /* ---- 今日のトレーニング ---- */
+    var todayCard = UI.el('div');
+    if (st.todayRecords.length) {
+      todayCard = UI.card('今日のトレーニング（+' + U.fmtInt(st.todayExp) + ' EXP）',
+        UI.el('div', { class: 'list' }, st.todayRecords.map(function (r) {
+          return recordRow(r, data);
+        })));
+    } else {
+      todayCard = UI.card('今日のトレーニング', UI.empty('まだ記録がありません'));
+    }
+    root.appendChild(UI.el('div', { class: 'mt16' }, todayCard));
+
+    /* ---- 記録ボタン ---- */
+    root.appendChild(UI.el('button', {
+      class: 'record-cta mt8', text: '＋  記録する',
+      onclick: function () { UI.openRecordSheet({}); }
+    }));
+
+    /* ---- 最近の記録 ---- */
+    var recent = G.sortRecords(data.trainingRecords).reverse()
+      .filter(function (r) { return r.date !== st.asOf; }).slice(0, 5);
+    if (recent.length) {
+      root.appendChild(UI.el('div', { class: 'section-title', text: '最近の記録' }));
+      root.appendChild(UI.el('div', { class: 'list' }, recent.map(function (r) {
+        return recordRow(r, data, true);
+      })));
+      root.appendChild(UI.el('button', {
+        class: 'btn block ghost mt8', text: 'すべての履歴を見る',
+        onclick: function () { ODL.App.go('history'); }
+      }));
+    }
+
+    return root;
+  };
+
+  function recordRow(r, data, showDate) {
+    var master = G.findMaster(data, r.activityId);
+    var name = master ? master.name : r.activityId;
+    var icon = master ? (master.icon || '🏋️') : '❓';
+    var val = master ? C.displayValue(master, r) : U.fmtInt(r.value) + (r.unit || '');
+    return UI.el('div', { class: 'row tappable', onclick: function () { UI.openRecordDetail(r); } }, [
+      UI.el('div', { class: 'icon', text: icon }),
+      UI.el('div', { class: 'body' }, [
+        UI.el('div', { class: 't', html: UI.escapeName(name) + ' ' + UI.escapeName(val) + (r.isPersonalBest ? '<span class="chip">PB</span>' : '') }),
+        UI.el('div', { class: 's', text: (showDate ? U.formatDateJa(r.date, true) + ' ・ ' : '') + 'Load ' + U.fmt(r.load, 1) })
+      ]),
+      UI.el('div', { class: 'end' }, [
+        UI.el('div', { class: 'exp', text: '+' + U.fmtInt(r.exp) }),
+        UI.el('div', { class: 'sub', text: 'EXP' })
+      ])
+    ]);
+  }
+
+  UI.recordRow = recordRow;
+  UI.escapeName = function (s) { return U.escapeHtml(s); };
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/history.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/history.js
+ * カレンダー・履歴一覧・記録の詳細／編集／削除
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator;
+  var G = ODL.GameState;
+  var Repo = ODL.Repository;
+  var UI = ODL.UI;
+
+  UI.views = UI.views || {};
+
+  var viewState = {
+    month: null,            /* 'YYYY-MM' */
+    selectedDate: null,
+    filterActivity: 'all',
+    limit: 40
+  };
+
+  UI.views.history = function () {
+    var data = Repo.data;
+    var st = Repo.state();
+    var root = UI.el('div');
+
+    if (!viewState.month) viewState.month = U.monthKey(U.today());
+
+    /* ---------------- カレンダー ---------------- */
+    root.appendChild(UI.card(null, buildCalendar(st), { tight: true }));
+
+    /* ---------------- 選択日 or 全履歴 ---------------- */
+    if (viewState.selectedDate) {
+      var day = data.trainingRecords.filter(function (r) { return r.date === viewState.selectedDate; });
+      root.appendChild(UI.el('div', { class: 'section-title' }, [
+        U.formatDateFull(viewState.selectedDate),
+        UI.el('button', {
+          class: 'btn small ghost', style: { float: 'right', marginTop: '-6px' },
+          text: '選択解除', onclick: function () { viewState.selectedDate = null; ODL.App.refresh(); }
+        })
+      ]));
+      if (day.length) {
+        root.appendChild(UI.el('div', { class: 'list' },
+          G.sortRecords(day).map(function (r) { return UI.recordRow(r, data); })));
+        var dayExp = U.sum(day, function (r) { return r.exp; });
+        root.appendChild(UI.el('div', { class: 'muted right mt8', text: 'この日の合計 +' + U.fmtInt(dayExp) + ' EXP' }));
+      } else {
+        root.appendChild(UI.empty('この日は記録がありません'));
+      }
+      root.appendChild(UI.el('button', {
+        class: 'btn block mt16', text: 'この日に記録を追加',
+        onclick: function () { UI.openRecordSheet({ date: viewState.selectedDate }); }
+      }));
+      return root;
+    }
+
+    /* フィルタ */
+    var select = UI.el('select', {
+      onchange: function () { viewState.filterActivity = select.value; viewState.limit = 40; ODL.App.refresh(); }
+    }, [UI.el('option', { value: 'all', text: 'すべての種目' })].concat(
+      data.activityMasters.map(function (m) {
+        return UI.el('option', { value: m.activityId, text: m.name });
+      })
+    ));
+    select.value = viewState.filterActivity;
+    root.appendChild(UI.el('div', { class: 'field mt16' }, [select]));
+
+    var list = data.trainingRecords.slice();
+    if (viewState.filterActivity !== 'all') {
+      list = list.filter(function (r) { return r.activityId === viewState.filterActivity; });
+    }
+    list = G.sortRecords(list).reverse();
+
+    if (!list.length) {
+      root.appendChild(UI.empty('記録がありません'));
+      return root;
+    }
+
+    var shown = list.slice(0, viewState.limit);
+    var byDate = {};
+    var order = [];
+    shown.forEach(function (r) {
+      if (!byDate[r.date]) { byDate[r.date] = []; order.push(r.date); }
+      byDate[r.date].push(r);
+    });
+
+    order.forEach(function (date) {
+      var recs = byDate[date];
+      var exp = U.sum(recs, function (r) { return r.exp; });
+      root.appendChild(UI.el('div', { class: 'section-title' }, [
+        U.formatDateFull(date),
+        UI.el('span', { style: { float: 'right', color: 'var(--accent)' }, text: '+' + U.fmtInt(exp) + ' EXP' })
+      ]));
+      root.appendChild(UI.el('div', { class: 'list' }, recs.map(function (r) {
+        return UI.recordRow(r, data);
+      })));
+    });
+
+    if (list.length > viewState.limit) {
+      root.appendChild(UI.el('button', {
+        class: 'btn block ghost mt16', text: 'さらに表示（残り ' + (list.length - viewState.limit) + '件）',
+        onclick: function () { viewState.limit += 40; ODL.App.refresh(); }
+      }));
+    } else {
+      root.appendChild(UI.el('div', { class: 'muted center mt16', text: '全 ' + list.length + ' 件' }));
+    }
+
+    return root;
+  };
+
+  /* ---------------------------------------------------------------------
+   * カレンダー
+   * ------------------------------------------------------------------- */
+  function buildCalendar(st) {
+    var wrap = UI.el('div');
+    var parts = viewState.month.split('-');
+    var year = parseInt(parts[0], 10), month = parseInt(parts[1], 10);
+
+    var head = UI.el('div', { class: 'cal-head' }, [
+      UI.el('button', { text: '‹', onclick: function () { shiftMonth(-1); } }),
+      UI.el('div', { class: 'm', text: year + '年' + month + '月' }),
+      UI.el('button', { text: '›', onclick: function () { shiftMonth(1); } })
+    ]);
+    wrap.appendChild(head);
+
+    var grid = UI.el('div', { class: 'cal-grid' });
+    ['日', '月', '火', '水', '木', '金', '土'].forEach(function (d, i) {
+      grid.appendChild(UI.el('div', { class: 'cal-dow' + (i === 0 ? ' sun' : i === 6 ? ' sat' : ''), text: d }));
+    });
+
+    var first = new Date(year, month - 1, 1);
+    var startDow = first.getDay();
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var today = U.today();
+
+    for (var i = 0; i < startDow; i++) grid.appendChild(UI.el('div', { class: 'cal-cell blank' }));
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      (function (day) {
+        var ds = year + '-' + U.pad2(month) + '-' + U.pad2(day);
+        var count = st.dateCounts[ds] || 0;
+        var cls = 'cal-cell';
+        if (count >= 3) cls += ' has lv3';
+        else if (count === 2) cls += ' has lv2';
+        else if (count === 1) cls += ' has lv1';
+        if (ds === today) cls += ' today';
+        var cell = UI.el('button', {
+          class: cls,
+          onclick: function () {
+            viewState.selectedDate = (viewState.selectedDate === ds) ? null : ds;
+            ODL.App.refresh();
+          }
+        }, [
+          UI.el('span', { text: String(day) }),
+          count > 0 ? UI.el('span', { class: 'cnt', text: count + '件' }) : null
+        ]);
+        grid.appendChild(cell);
+      })(d);
+    }
+
+    wrap.appendChild(grid);
+
+    /* 月サマリ */
+    var monthRecords = Repo.data.trainingRecords.filter(function (r) { return U.monthKey(r.date) === viewState.month; });
+    var days = {};
+    monthRecords.forEach(function (r) { days[r.date] = true; });
+    wrap.appendChild(UI.el('div', { class: 'cal-legend' }, [
+      UI.el('span', { text: 'この月: ' + Object.keys(days).length + '日 / ' + monthRecords.length + '件 / +' + U.fmtInt(U.sum(monthRecords, function (r) { return r.exp; })) + ' EXP' })
+    ]));
+
+    return wrap;
+  }
+
+  function shiftMonth(delta) {
+    var parts = viewState.month.split('-');
+    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1 + delta, 1);
+    viewState.month = d.getFullYear() + '-' + U.pad2(d.getMonth() + 1);
+    viewState.selectedDate = null;
+    ODL.App.refresh();
+  }
+
+  /* ---------------------------------------------------------------------
+   * 記録の詳細 / 編集 / 削除
+   * ------------------------------------------------------------------- */
+  UI.openRecordDetail = function (record) {
+    var data = Repo.data;
+    var master = G.findMaster(data, record.activityId);
+    var name = master ? master.name : record.activityId;
+
+    var rows = [
+      UI.kv('日付', U.formatDateFull(record.date)),
+      UI.kv('種目', (master && master.icon ? master.icon + ' ' : '') + U.escapeHtml(name)),
+      UI.kv('内容', master ? U.escapeHtml(C.displayValue(master, record)) : U.fmtInt(record.value) + U.escapeHtml(record.unit || '')),
+      UI.kv('負荷 Load', U.fmt(record.load, 2)),
+      UI.kv('獲得EXP', '<span style="color:var(--accent)">+' + U.fmtInt(record.exp) + '</span>')
+    ];
+
+    var bd = record.expBreakdown || {};
+    if (bd.base !== undefined) rows.push(UI.kv('　内訳: 基本', U.fmt(bd.base, 1)));
+    if (bd.streakRate) rows.push(UI.kv('　内訳: ストリーク', '+' + Math.round(bd.streakRate * 100) + '%（' + bd.streakDays + '日）'));
+    if (bd.pbRate) rows.push(UI.kv('　内訳: PB', '+' + Math.round(bd.pbRate * 100) + '%'));
+    if (bd.paceFactor && bd.pace) rows.push(UI.kv('　ペース', U.fmt(bd.pace, 2) + ' 分/km ×' + U.fmt(bd.paceFactor, 2)));
+
+    var growth = ODL.STATS.filter(function (s) { return record.statGrowth[s] > 0; });
+    if (growth.length) {
+      rows.push(UI.kv('ステータス成長', growth.map(function (s) {
+        return '<span style="color:' + ODL.STAT_COLORS[s] + '">' + s + ' +' + U.fmt(record.statGrowth[s], 3) + '</span>';
+      }).join('　')));
+    }
+    if (record.isPersonalBest) rows.push(UI.kv('パーソナルベスト', '<span style="color:var(--gold)">🎉 更新記録</span>'));
+    if (record.note) rows.push(UI.kv('メモ', U.escapeHtml(record.note)));
+    rows.push(UI.kv('記録ID', '<span style="font-size:10px;color:var(--text-3)">' + U.escapeHtml(record.id) + '</span>'));
+
+    var sheet = UI.sheet({
+      title: '記録の詳細',
+      content: [
+        UI.el('div', {}, rows),
+        UI.el('div', { class: 'hint mt16', text: 'この記録には、保存された時点の計算結果がそのまま残っています。あとから計算式を変更しても、この値は変わりません。' })
+      ],
+      actions: [
+        {
+          label: '編集', onClick: function () {
+            UI.openRecordSheet({ record: record });
+          }
+        },
+        {
+          label: '削除', kind: 'danger', keepOpen: true, onClick: function (api) {
+            UI.confirm({
+              title: 'この記録を削除しますか？',
+              message: U.formatDateJa(record.date) + ' の ' + name + ' を削除します。',
+              warning: '削除すると、この記録ぶんのEXP・ステータス成長・PB・ストリークが再計算されます。取り消せません。',
+              okLabel: '削除する', danger: true
+            }).then(function (ok) {
+              if (!ok) return;
+              var res = Repo.deleteTrainingRecord(record.id);
+              if (!res.ok) { UI.toast(res.errors[0], 'err'); return; }
+              api.close();
+              UI.toast('削除しました', 'ok');
+              ODL.App.refresh();
+            });
+          }
+        }
+      ]
+    });
+  };
+
+  UI.historyState = viewState;
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/status.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/status.js
+ * ステータス画面（5ステータス・成長推移・パーソナルベスト・種目別集計）
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator;
+  var G = ODL.GameState;
+  var Repo = ODL.Repository;
+  var UI = ODL.UI;
+
+  UI.views = UI.views || {};
+
+  UI.views.status = function () {
+    var data = Repo.data;
+    var st = Repo.state();
+    var s = data.settings;
+    var root = UI.el('div');
+
+    /* ---- Lv 概要 ---- */
+    root.appendChild(UI.card('LEVEL', [
+      UI.kv('レベル', 'Lv.' + st.level),
+      UI.kv('累積EXP', U.fmtInt(st.cumulativeExp)),
+      UI.kv('次のレベルまで', U.fmtInt(st.levelInfo.remaining) + ' EXP'),
+      UI.kv('通算トレ日数', st.totalDays + ' 日'),
+      UI.kv('通算記録数', st.totalRecords + ' 件'),
+      UI.kv('最長ストリーク', st.streak.best + ' 日')
+    ]));
+
+    /* ---- 5ステータス ---- */
+    var maxStat = Math.max(U.num(s.display.statBarMax, 60),
+      Math.ceil(Math.max.apply(null, ODL.STATS.map(function (k) { return st.stats[k]; })) / 10) * 10);
+
+    var growthSinceMonth = statsDelta(data, 30);
+
+    var statCard = UI.el('div', { class: 'card' });
+    statCard.appendChild(UI.el('div', { class: 'card-title', text: 'STATUS' }));
+    ODL.STATS.forEach(function (k) {
+      var v = st.stats[k];
+      var pct = U.clamp((v / maxStat) * 100, 0, 100);
+      var delta = growthSinceMonth[k];
+      statCard.appendChild(UI.el('div', { class: 'stat-big stat-' + k }, [
+        UI.el('div', { class: 'top' }, [
+          UI.el('div', { class: 'nm', html: k + '<span>' + ODL.STAT_LABELS_LONG[k] + '</span>' }),
+          UI.el('div', { class: 'vl', text: U.fmt(v, 1) })
+        ]),
+        UI.el('div', { class: 'stat-bar' }, [UI.el('i', { style: { width: pct + '%' } })]),
+        UI.el('div', { class: 'sub', text: delta > 0 ? '直近30日: +' + U.fmt(delta, 2) : '直近30日: 変化なし' })
+      ]));
+    });
+    root.appendChild(statCard);
+
+    /* ---- 成長推移 ---- */
+    var series = buildGrowthSeries(data);
+    if (series.labels.length >= 2) {
+      root.appendChild(UI.card('成長の推移', [
+        UI.lineChart(series.series, {}),
+        UI.el('div', { class: 'chart-legend' }, ODL.STATS.map(function (k) {
+          return UI.el('span', {}, [
+            UI.el('i', { class: 'dot-' + k, style: { display: 'inline-block', width: '9px', height: '9px', borderRadius: '2px', marginRight: '4px' } }),
+            UI.el('span', { text: k })
+          ]);
+        })),
+        UI.el('div', { class: 'muted mt8', text: series.labels[0] + ' 〜 ' + series.labels[series.labels.length - 1] })
+      ]));
+    }
+
+    /* ---- パーソナルベスト ---- */
+    var pbRows = [];
+    data.activityMasters.slice().sort(function (a, b) { return a.sortOrder - b.sortOrder; }).forEach(function (m) {
+      var pb = st.pbs[m.activityId];
+      if (!pb) return;
+      pbRows.push(UI.el('div', { class: 'row' }, [
+        UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
+        UI.el('div', { class: 'body' }, [
+          UI.el('div', { class: 't', text: m.name }),
+          UI.el('div', { class: 's', text: U.formatDateJa(pb.date, true) })
+        ]),
+        UI.el('div', { class: 'end' }, [
+          UI.el('div', { class: 'exp', style: { color: 'var(--gold)' }, text: pb.label })
+        ])
+      ]));
+    });
+    root.appendChild(UI.card('PERSONAL BEST',
+      pbRows.length ? UI.el('div', { class: 'list' }, pbRows) : UI.empty('まだ記録がありません')));
+
+    /* ---- 種目別集計 ---- */
+    var byAct = U.groupBy(data.trainingRecords, function (r) { return r.activityId; });
+    var actRows = [];
+    data.activityMasters.slice().sort(function (a, b) { return a.sortOrder - b.sortOrder; }).forEach(function (m) {
+      var list = byAct[m.activityId];
+      if (!list || !list.length) return;
+      var exp = U.sum(list, function (r) { return r.exp; });
+      var total = totalAmount(m, list);
+      actRows.push(UI.el('div', { class: 'row' }, [
+        UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
+        UI.el('div', { class: 'body' }, [
+          UI.el('div', { class: 't', text: m.name }),
+          UI.el('div', { class: 's', text: list.length + '回 ・ 累計 ' + total })
+        ]),
+        UI.el('div', { class: 'end' }, [
+          UI.el('div', { class: 'exp', text: '+' + U.fmtInt(exp) }),
+          UI.el('div', { class: 'sub', text: 'EXP' })
+        ])
+      ]));
+    });
+    if (actRows.length) {
+      root.appendChild(UI.card('種目別の積み上げ', UI.el('div', { class: 'list' }, actRows)));
+    }
+
+    return root;
+  };
+
+  function totalAmount(master, list) {
+    switch (master.inputType) {
+      case 'reps':
+        return U.fmtInt(U.sum(list, function (r) { return U.num(r.input.reps, 0); })) + '回';
+      case 'weight_reps':
+        return U.fmtInt(U.sum(list, function (r) { return U.num(r.input.reps, 0); })) + '回';
+      case 'minutes':
+        return U.fmtInt(U.sum(list, function (r) { return U.num(r.input.minutes, 0); })) + '分';
+      case 'distance_time':
+        return U.fmt(U.sum(list, function (r) { return U.num(r.input.distance, 0); }), 1) + 'km';
+      default:
+        return '';
+    }
+  }
+
+  /* 直近n日のステータス増分 */
+  function statsDelta(data, days) {
+    var since = U.addDays(U.today(), -days);
+    var out = U.zeroStats();
+    (data.trainingRecords || []).forEach(function (r) {
+      if (U.diffDays(since, r.date) < 0) return;
+      ODL.STATS.forEach(function (s) { out[s] += U.num(r.statGrowth[s], 0); });
+    });
+    return out;
+  }
+
+  /* 月ごとのステータス推移 */
+  function buildGrowthSeries(data) {
+    var sorted = G.sortRecords(data.trainingRecords);
+    var labels = [];
+    var points = {};
+    ODL.STATS.forEach(function (s) { points[s] = []; });
+
+    if (!sorted.length) return { labels: [], series: [] };
+
+    var init = U.num(data.settings.growth.initialStat, 10);
+    var cur = {};
+    ODL.STATS.forEach(function (s) { cur[s] = init; });
+
+    var monthMap = {};
+    sorted.forEach(function (r) {
+      ODL.STATS.forEach(function (s) { cur[s] += U.num(r.statGrowth[s], 0); });
+      monthMap[U.monthKey(r.date)] = U.clone(cur);
+    });
+
+    var months = Object.keys(monthMap).sort();
+    /* 表示は直近18ヶ月まで */
+    months = months.slice(-18);
+    months.forEach(function (m, i) {
+      labels.push(m);
+      ODL.STATS.forEach(function (s) { points[s].push({ x: i, y: monthMap[m][s] }); });
+    });
+
+    return {
+      labels: labels,
+      series: ODL.STATS.map(function (s) {
+        return { name: s, color: ODL.STAT_COLORS[s], points: points[s] };
+      })
+    };
+  }
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/body.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/body.js
+ * 身体データ画面。
+ * ここで扱う実測値は、EXP・Lv・STR等の計算には一切使用しない。
+ * ゲームデータと現実の身体測定データは混ぜない。
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var Repo = ODL.Repository;
+  var UI = ODL.UI;
+
+  UI.views = UI.views || {};
+  var bodyState = { chartMetric: null };
+
+  UI.views.body = function () {
+    var data = Repo.data;
+    var root = UI.el('div');
+    var metrics = (data.bodyMetrics || []).filter(function (m) { return m.active; })
+      .sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+    var records = (data.bodyRecords || []).slice().sort(function (a, b) {
+      return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+    });
+
+    root.appendChild(UI.el('div', { class: 'okbox', style: { marginBottom: '12px' },
+      text: '身体データはゲームのステータス（STR/VIT/…）とは別管理です。EXPやレベルの計算には一切使われません。' }));
+
+    /* ---- 最新値 ---- */
+    var latest = {};
+    records.slice().reverse().forEach(function (r) {
+      Object.keys(r.values).forEach(function (k) { latest[k] = { value: r.values[k], date: r.date }; });
+    });
+
+    var latestRows = metrics.filter(function (m) { return latest[m.metricId]; }).map(function (m) {
+      var l = latest[m.metricId];
+      var prev = previousValue(records, m.metricId, l.date);
+      var diff = prev !== null ? l.value - prev : null;
+      var diffText = diff === null ? '' :
+        (diff > 0 ? '▲ +' + U.fmt(diff, 1) : diff < 0 ? '▼ ' + U.fmt(diff, 1) : '→ ±0');
+      return UI.el('div', { class: 'row' }, [
+        UI.el('div', { class: 'body' }, [
+          UI.el('div', { class: 't', text: m.name }),
+          UI.el('div', { class: 's', text: U.formatDateJa(l.date) + (diffText ? ' ・ 前回比 ' + diffText : '') })
+        ]),
+        UI.el('div', { class: 'end' }, [
+          UI.el('div', { class: 'exp', style: { color: 'var(--text)' }, text: U.fmt(l.value, 1) }),
+          UI.el('div', { class: 'sub', text: m.unit })
+        ])
+      ]);
+    });
+
+    root.appendChild(UI.card('最新の測定値',
+      latestRows.length ? UI.el('div', { class: 'list' }, latestRows) : UI.empty('まだ記録がありません')));
+
+    root.appendChild(UI.el('button', {
+      class: 'btn primary block', text: '＋ 身体データを記録',
+      onclick: function () { openBodySheet(null); }
+    }));
+
+    /* ---- 推移グラフ ---- */
+    var chartable = metrics.filter(function (m) {
+      return records.filter(function (r) { return r.values[m.metricId] !== undefined; }).length >= 2;
+    });
+    if (chartable.length) {
+      if (!bodyState.chartMetric || !chartable.some(function (m) { return m.metricId === bodyState.chartMetric; })) {
+        /* 変化を見たいのはまず体重なので、あれば体重を初期表示にする */
+        var pref = chartable.filter(function (m) { return m.metricId === 'weight'; })[0];
+        bodyState.chartMetric = (pref || chartable[0]).metricId;
+      }
+      var sel = UI.el('select', {
+        onchange: function () { bodyState.chartMetric = sel.value; ODL.App.refresh(); }
+      }, chartable.map(function (m) { return UI.el('option', { value: m.metricId, text: m.name }); }));
+      sel.value = bodyState.chartMetric;
+
+      var metric = chartable.filter(function (m) { return m.metricId === bodyState.chartMetric; })[0];
+      var pts = records.filter(function (r) { return r.values[metric.metricId] !== undefined; })
+        .map(function (r) { return { x: U.parseDate(r.date), y: r.values[metric.metricId] }; })
+        .sort(function (a, b) { return a.x - b.x; });
+
+      root.appendChild(UI.card('推移', [
+        UI.el('div', { class: 'field' }, [sel]),
+        UI.lineChart([{ name: metric.name, color: '#4dd9ff', points: pts }], {}),
+        UI.el('div', { class: 'muted mt8', text: metric.name + '（' + metric.unit + '） ' + pts.length + '件' })
+      ]));
+    }
+
+    /* ---- 履歴 ---- */
+    if (records.length) {
+      root.appendChild(UI.el('div', { class: 'section-title', text: '測定履歴' }));
+      root.appendChild(UI.el('div', { class: 'list' }, records.slice(0, 40).map(function (r) {
+        var summary = metrics.filter(function (m) { return r.values[m.metricId] !== undefined; })
+          .map(function (m) { return m.name + ' ' + U.fmt(r.values[m.metricId], 1) + m.unit; })
+          .join(' ／ ');
+        return UI.el('div', { class: 'row tappable', onclick: function () { openBodySheet(r); } }, [
+          UI.el('div', { class: 'icon', text: '📏' }),
+          UI.el('div', { class: 'body' }, [
+            UI.el('div', { class: 't', text: U.formatDateJa(r.date, true) }),
+            UI.el('div', { class: 's', text: summary || '（データなし）' })
+          ])
+        ]);
+      })));
+    }
+
+    /* ---- 測定項目の管理 ---- */
+    root.appendChild(UI.el('button', {
+      class: 'btn block ghost mt16', text: '測定項目を編集',
+      onclick: openMetricList
+    }));
+
+    return root;
+  };
+
+  function previousValue(recordsDesc, metricId, beforeDate) {
+    for (var i = 0; i < recordsDesc.length; i++) {
+      var r = recordsDesc[i];
+      if (r.date >= beforeDate) continue;
+      if (r.values[metricId] !== undefined) return r.values[metricId];
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------------------------------
+   * 入力シート
+   * ------------------------------------------------------------------- */
+  function openBodySheet(record) {
+    var data = Repo.data;
+    var metrics = (data.bodyMetrics || []).filter(function (m) { return m.active; })
+      .sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+
+    var dateInput = UI.el('input', { type: 'date', value: record ? record.date : U.today(), max: U.today() });
+    var inputs = {};
+    var content = [UI.el('div', { class: 'field' }, [UI.el('label', { text: '測定日' }), dateInput])];
+
+    /* 直近値をプレースホルダにする */
+    var recordsDesc = (data.bodyRecords || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+
+    metrics.forEach(function (m) {
+      var last = null;
+      for (var i = 0; i < recordsDesc.length; i++) {
+        if (recordsDesc[i].values[m.metricId] !== undefined) { last = recordsDesc[i].values[m.metricId]; break; }
+      }
+      var input = UI.el('input', {
+        type: 'number', step: m.step, min: '0', inputmode: 'decimal',
+        placeholder: last !== null ? String(last) : '',
+        value: record && record.values[m.metricId] !== undefined ? record.values[m.metricId] : ''
+      });
+      inputs[m.metricId] = input;
+      content.push(UI.el('div', { class: 'field' }, [
+        UI.el('label', { text: m.name }),
+        UI.el('div', { class: 'unit-suffix' }, [input, UI.el('span', { text: m.unit })])
+      ]));
+    });
+
+    var noteInput = UI.el('input', { type: 'text', maxlength: '120', placeholder: '（任意）', value: record ? record.note : '' });
+    content.push(UI.el('div', { class: 'field' }, [UI.el('label', { text: 'メモ' }), noteInput]));
+    content.push(UI.el('div', { class: 'hint', text: '入力した項目だけが保存されます。空欄の項目は記録されません。' }));
+
+    var actions = [{ label: 'キャンセル' }];
+    if (record) {
+      actions.push({
+        label: '削除', kind: 'danger', keepOpen: true, onClick: function (api) {
+          UI.confirm({ title: 'この測定を削除しますか？', okLabel: '削除する', danger: true }).then(function (ok) {
+            if (!ok) return;
+            Repo.deleteBodyRecord(record.id);
+            api.close();
+            UI.toast('削除しました', 'ok');
+            ODL.App.refresh();
+          });
+        }
+      });
+    }
+    actions.push({
+      label: '保存', kind: 'primary', keepOpen: true, onClick: function (api) {
+        if (!U.isDateStr(dateInput.value)) { UI.toast('日付を選んでください', 'err'); return; }
+        var values = {};
+        Object.keys(inputs).forEach(function (k) { values[k] = inputs[k].value; });
+        var res = Repo.addBodyRecord({
+          id: record ? record.id : null,
+          date: dateInput.value, values: values, note: noteInput.value.trim()
+        });
+        if (!res.ok) { UI.toast(res.errors[0], 'err'); return; }
+        if (res.saveResult && !res.saveResult.ok) UI.toast(UI.saveErrorMessage(res.saveResult.error), 'err', 5000);
+        api.close();
+        UI.toast('保存しました', 'ok');
+        ODL.App.refresh();
+      }
+    });
+
+    UI.sheet({ title: record ? '測定を編集' : '身体データを記録', content: content, actions: actions });
+  }
+
+  /* ---------------------------------------------------------------------
+   * 測定項目の管理
+   * ------------------------------------------------------------------- */
+  function openMetricList() {
+    var data = Repo.data;
+    var content = UI.el('div', { class: 'list' }, data.bodyMetrics
+      .slice().sort(function (a, b) { return a.sortOrder - b.sortOrder; })
+      .map(function (m) {
+        return UI.el('div', { class: 'row' }, [
+          UI.el('div', { class: 'body' }, [
+            UI.el('div', { class: 't', text: m.name }),
+            UI.el('div', { class: 's', text: '単位: ' + m.unit })
+          ]),
+          UI.el('div', { class: 'end' }, [
+            UI.toggle(m.active, function (v) {
+              Repo.upsertBodyMetric(U.mergeDefaults({ active: v }, m));
+              UI.toast(v ? '表示にしました' : '非表示にしました', 'ok');
+            })
+          ])
+        ]);
+      }));
+
+    UI.sheet({
+      title: '測定項目',
+      content: [content, UI.el('div', { class: 'hint mt8', text: '非表示にしても、過去の測定データは削除されません。' })],
+      actions: [
+        { label: '閉じる' },
+        { label: '＋ 項目を追加', kind: 'primary', onClick: function () { setTimeout(openMetricForm, 220); } }
+      ]
+    });
+  }
+
+  function openMetricForm() {
+    var nameInput = UI.el('input', { type: 'text', placeholder: '例）ふくらはぎ' });
+    var unitInput = UI.el('input', { type: 'text', placeholder: '例）cm', value: 'cm' });
+    UI.sheet({
+      title: '測定項目を追加',
+      content: [
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: '項目名' }), nameInput]),
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: '単位' }), unitInput])
+      ],
+      actions: [
+        { label: 'キャンセル' },
+        {
+          label: '追加', kind: 'primary', keepOpen: true, onClick: function (api) {
+            var name = nameInput.value.trim();
+            if (!name) { UI.toast('項目名を入力してください', 'err'); return; }
+            var res = Repo.upsertBodyMetric({
+              metricId: U.slugId(name), name: name, unit: unitInput.value.trim(),
+              step: 0.1, active: true, sortOrder: 1000 + Repo.data.bodyMetrics.length
+            });
+            if (!res.ok) { UI.toast(res.errors[0], 'err'); return; }
+            api.close();
+            UI.toast('追加しました', 'ok');
+            ODL.App.refresh();
+          }
+        }
+      ]
+    });
+  }
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/ui/settings.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / ui/settings.js
+ * 設定・種目マスタ編集・バックアップ／復元・初期化
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var C = ODL.Calculator;
+  var G = ODL.GameState;
+  var Repo = ODL.Repository;
+  var St = ODL.Storage;
+  var UI = ODL.UI;
+
+  UI.views = UI.views || {};
+
+  UI.views.settings = function () {
+    var data = Repo.data;
+    var s = data.settings;
+    var root = UI.el('div');
+
+    /* ---------------- データ ---------------- */
+    var lastBackup = data.meta.lastBackupAt
+      ? new Date(data.meta.lastBackupAt).toLocaleString('ja-JP')
+      : 'まだ書き出していません';
+
+    root.appendChild(UI.card('データ', [
+      UI.el('div', { class: 'muted mb8', text: '最後の書き出し: ' + lastBackup }),
+      UI.el('button', { class: 'btn primary block', text: '⬇ データを書き出す（バックアップ）', onclick: exportBackup }),
+      UI.el('button', { class: 'btn block mt8', text: '⬆ データを読み込む（復元）', onclick: importBackup }),
+      UI.el('button', { class: 'btn block ghost mt8', text: '自動バックアップの一覧', onclick: showAutoBackups }),
+      UI.el('div', { class: 'hint mt8', text:
+        '記録は資産です。機種変更やブラウザのデータ削除に備えて、ときどき書き出しておいてください。' +
+        '復元のときは、上書き前に自動バックアップが作られます。' })
+    ]));
+
+    /* ---------------- 種目マスタ ---------------- */
+    root.appendChild(UI.card('種目マスタ', [
+      UI.el('div', { class: 'muted mb8', text: '有効 ' + data.activityMasters.filter(function (m) { return m.active; }).length + ' 種目 / 全 ' + data.activityMasters.length + ' 種目' }),
+      UI.el('button', { class: 'btn block', text: '種目を編集する', onclick: openMasterList })
+    ]));
+
+    /* ---------------- EXP設定 ---------------- */
+    root.appendChild(UI.card('EXP / レベル', [
+      UI.numberSetting('EXP倍率', '全種目のEXPにかかる倍率', s.exp.expMultiplier, { step: 0.05, min: 0.05, max: 20 },
+        function (v) { Repo.updateSettings({ exp: { expMultiplier: v } }); ODL.App.refresh(); }),
+      UI.numberSetting('レベル係数', 'Lv = √(累積EXP ÷ 係数) + 1。大きいほど上がりにくい', s.exp.levelCoefficient, { step: 1, min: 1, max: 100000 },
+        function (v) { Repo.updateSettings({ exp: { levelCoefficient: v } }); ODL.App.refresh(); }),
+      UI.el('div', { class: 'hint', html: levelPreview(s) })
+    ]));
+
+    /* ---------------- ステータス成長 ---------------- */
+    root.appendChild(UI.card('ステータス成長', [
+      UI.numberSetting('成長係数', 'BaseGrowth = Load × この値', s.growth.growthCoefficient, { step: 0.0005, min: 0.0001, max: 1 },
+        function (v) { Repo.updateSettings({ growth: { growthCoefficient: v } }); ODL.App.refresh(); }),
+      UI.numberSetting('成長補正の基準値', '補正 = √(基準値 ÷ 現在値)', s.growth.statBase, { step: 1, min: 1, max: 1000 },
+        function (v) { Repo.updateSettings({ growth: { statBase: v } }); ODL.App.refresh(); }),
+      UI.numberSetting('補正の下限', '成長が完全に止まらないようにする下限', s.growth.minCorrection, { step: 0.05, min: 0.01, max: 1 },
+        function (v) { Repo.updateSettings({ growth: { minCorrection: v } }); ODL.App.refresh(); }),
+      UI.el('div', { class: 'hint', text: '※ 設定を変えても、すでに保存された記録の成長量は変わりません（過去の記録は保護されます）。' })
+    ]));
+
+    /* ---------------- ストリーク ---------------- */
+    var bonusText = s.streak.bonusTable.map(function (b) {
+      return b.days + '日 +' + Math.round(b.rate * 100) + '%';
+    }).join(' / ');
+    root.appendChild(UI.card('ストリーク', [
+      UI.numberSetting('リセット日数', 'この日数だけ記録がないと途切れる', s.streak.resetAfterDays, { step: 1, min: 1, max: 30 },
+        function (v) { Repo.updateSettings({ streak: { resetAfterDays: v } }); ODL.App.refresh(); }),
+      UI.el('div', { class: 'kv' }, [
+        UI.el('span', { class: 'k', text: 'EXPボーナス' }),
+        UI.el('span', { class: 'v', style: { fontSize: '11px' }, text: bonusText })
+      ]),
+      UI.el('button', { class: 'btn block small ghost mt8', text: 'ボーナス表を編集', onclick: openStreakEditor })
+    ]));
+
+    /* ---------------- PB ---------------- */
+    root.appendChild(UI.card('パーソナルベスト', [
+      UI.switchRow('PBボーナスを有効にする', 'PB更新時にEXPを加算', UI.toggle(s.pb.enabled, function (v) {
+        Repo.updateSettings({ pb: { enabled: v } }); ODL.App.refresh();
+      })),
+      UI.numberSetting('PBボーナス率', '0.1 = +10%', s.pb.bonus, { step: 0.01, min: 0, max: 2 },
+        function (v) { Repo.updateSettings({ pb: { bonus: v } }); ODL.App.refresh(); })
+    ]));
+
+    /* ---------------- ランニング ---------------- */
+    root.appendChild(UI.card('ランニング', [
+      UI.numberSetting('基準ペース（分/km）', 'このペースで補正 ×1.00', s.pace.basePaceMinPerKm, { step: 0.5, min: 1, max: 30 },
+        function (v) { Repo.updateSettings({ pace: { basePaceMinPerKm: v } }); ODL.App.refresh(); }),
+      UI.numberSetting('補正の下限', '遅いときの下限', s.pace.minPaceFactor, { step: 0.05, min: 0.1, max: 1 },
+        function (v) { Repo.updateSettings({ pace: { minPaceFactor: v } }); ODL.App.refresh(); }),
+      UI.numberSetting('補正の上限', '速いときの上限', s.pace.maxPaceFactor, { step: 0.05, min: 1, max: 5 },
+        function (v) { Repo.updateSettings({ pace: { maxPaceFactor: v } }); ODL.App.refresh(); })
+    ]));
+
+    /* ---------------- 表示 ---------------- */
+    var labelSelect = UI.el('select', {
+      onchange: function () { Repo.updateSettings({ display: { statLabel: labelSelect.value } }); ODL.App.refresh(); }
+    }, [
+      UI.el('option', { value: 'both', text: '略称＋日本語' }),
+      UI.el('option', { value: 'abbr', text: '略称のみ（STR）' }),
+      UI.el('option', { value: 'ja', text: '日本語のみ（筋力）' })
+    ]);
+    labelSelect.value = s.display.statLabel;
+
+    root.appendChild(UI.card('表示', [
+      UI.switchRow('ステータス表記', null, labelSelect),
+      UI.numberSetting('ステータスバーの満タン基準', '表示上の目安', s.display.statBarMax, { step: 10, min: 10, max: 1000 },
+        function (v) { Repo.updateSettings({ display: { statBarMax: v } }); ODL.App.refresh(); })
+    ]));
+
+    /* ---------------- 上級者向け ---------------- */
+    root.appendChild(UI.card('メンテナンス', [
+      UI.el('button', { class: 'btn block ghost', text: '全記録を現在の設定で再計算', onclick: recalcAll }),
+      UI.el('div', { class: 'hint mt8', text:
+        '係数を調整したあと、過去の記録もすべて新しい式で計算し直します。実行前に自動バックアップを作成します。' }),
+      UI.el('button', { class: 'btn block ghost mt16', text: '旧形式（v0）のテストデータを書き出す', onclick: exportLegacyTest }),
+      UI.el('div', { class: 'hint mt8', text:
+        'migrationの動作確認用です。書き出したファイルを「データを読み込む」で復元すると、自動で現行形式へ変換されます。' })
+    ]));
+
+    /* ---------------- 初期化 ---------------- */
+    root.appendChild(UI.card('データ初期化', [
+      UI.el('div', { class: 'warnbox', text: 'すべてのトレーニング記録・身体データが消えます。取り消せません。実行前に必ずバックアップを書き出してください。' }),
+      UI.el('button', { class: 'btn danger block mt8', text: 'データを初期化する', onclick: resetAll })
+    ]));
+
+    /* ---------------- アプリ情報 ---------------- */
+    var bytes = St.estimateBytes();
+    root.appendChild(UI.card('このアプリについて', [
+      UI.kv('アプリ', ODL.APP_NAME + ' v' + ODL.APP_VERSION),
+      UI.kv('データ形式', 'schemaVersion ' + data.schemaVersion),
+      UI.kv('計算式', 'calcVersion ' + ODL.CALC_VERSION),
+      UI.kv('保存先', St.driverName + (St.isPersistent() ? '' : '（一時保存）')),
+      UI.kv('使用量（概算）', (bytes / 1024).toFixed(1) + ' KB'),
+      UI.kv('記録数', data.trainingRecords.length + ' 件'),
+      UI.kv('開始日', U.formatDateJa(data.userProfile.startDate)),
+      St.isPersistent() ? null : UI.el('div', { class: 'warnbox mt8', text:
+        'このブラウザでは保存領域が使えないため、データが残りません。プライベートモードを解除するか、別のブラウザをお試しください。' })
+    ]));
+
+    return root;
+  };
+
+  function levelPreview(s) {
+    return [2, 5, 10, 20, 30].map(function (lv) {
+      return 'Lv' + lv + ' = ' + U.fmtInt(C.expForLevel(lv, s)) + ' EXP';
+    }).join(' ／ ');
+  }
+
+  /* ---------------------------------------------------------------------
+   * バックアップ
+   * ------------------------------------------------------------------- */
+  function exportBackup() {
+    var text = Repo.exportString();
+    var name = Repo.backupFileName();
+    var ok = UI.downloadText(name, text);
+    if (ok) {
+      Repo.markBackedUp();
+      UI.toast('書き出しました: ' + name, 'ok', 3500);
+      ODL.App.refresh();
+    } else {
+      /* ダウンロードできない環境向けのフォールバック */
+      var ta = UI.el('textarea', { style: { minHeight: '180px', fontSize: '11px' } });
+      ta.value = text;
+      UI.sheet({
+        title: 'バックアップ（コピーして保存してください）',
+        content: [UI.el('div', { class: 'hint mb8', text: 'この端末ではファイル保存ができませんでした。下の内容をすべてコピーして、メモアプリ等に保存してください。' }), ta],
+        actions: [{ label: '閉じる' }, {
+          label: 'コピー', kind: 'primary', onClick: function () {
+            ta.select();
+            try { document.execCommand('copy'); UI.toast('コピーしました', 'ok'); }
+            catch (e) { UI.toast('コピーできませんでした', 'err'); }
+          }
+        }]
+      });
+    }
+  }
+
+  function importBackup() {
+    var input = UI.el('input', { type: 'file', accept: '.json,application/json', style: { display: 'none' } });
+    document.body.appendChild(input);
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      document.body.removeChild(input);
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onerror = function () { UI.toast('ファイルを読み込めませんでした', 'err'); };
+      reader.onload = function () { doImport(String(reader.result)); };
+      reader.readAsText(file);
+    });
+    input.click();
+  }
+
+  function doImport(text, allowEmpty) {
+    /* 検証 → migration → 保存 まで importFromString が担当する。
+       途中で失敗した場合は現在のデータに一切手を触れずに戻ってくる。 */
+    var preview = Repo.importFromString(text, { allowEmpty: !!allowEmpty });
+    if (!preview.ok) {
+      if (preview.needsConfirmEmpty) {
+        UI.confirm({
+          title: '記録が0件です',
+          message: 'このバックアップにはトレーニング記録が入っていません。それでも復元しますか？',
+          okLabel: '復元する', danger: true
+        }).then(function (ok) { if (ok) doImport(text, true); });
+        return;
+      }
+      UI.sheet({
+        title: '復元できませんでした',
+        content: [
+          UI.el('div', { class: 'warnbox' }, UI.el('ul', { class: 'errlist' },
+            preview.errors.map(function (e) { return UI.el('li', { text: e }); }))),
+          UI.el('div', { class: 'hint mt8', text: '現在のデータは変更していません。' })
+        ],
+        actions: [{ label: '閉じる' }]
+      });
+      return;
+    }
+
+    UI.toast('復元しました（記録 ' + preview.counts.training + '件）', 'ok', 3500);
+    if (preview.migrated) {
+      UI.toast('古い形式を自動変換しました（' + preview.steps.join(', ') + '）', 'ok', 4200);
+    }
+    ODL.App.refresh();
+  }
+
+  function showAutoBackups() {
+    var list = Repo.listAutoBackups();
+    UI.sheet({
+      title: '自動バックアップ',
+      content: [
+        UI.el('div', { class: 'hint mb8', text: 'migration・復元・初期化・再計算の直前に自動で作られます。最大 ' + ODL.AUTO_BACKUP_KEEP + ' 件保持。' }),
+        list.length ? UI.el('div', { class: 'list' }, list.map(function (b) {
+          var obj = Repo.readAutoBackup(b.key);
+          var count = obj && Array.isArray(obj.trainingRecords) ? obj.trainingRecords.length : '?';
+          return UI.el('div', { class: 'row' }, [
+            UI.el('div', { class: 'body' }, [
+              UI.el('div', { class: 't', text: b.at.replace(/T/, ' ').slice(0, 19).replace(/-/g, '/') }),
+              UI.el('div', { class: 's', text: '記録 ' + count + '件' })
+            ]),
+            UI.el('div', { class: 'end' }, [
+              UI.el('button', {
+                class: 'btn small', text: '復元', onclick: function () {
+                  UI.confirm({
+                    title: 'このバックアップから復元しますか？',
+                    message: '現在のデータは、復元の直前に自動バックアップされます。',
+                    okLabel: '復元する'
+                  }).then(function (ok) {
+                    if (!ok) return;
+                    var res = Repo.restoreAutoBackup(b.key);
+                    if (!res.ok) { UI.toast(res.errors[0], 'err', 4000); return; }
+                    UI.closeAllSheets();
+                    UI.toast('復元しました', 'ok');
+                    ODL.App.refresh();
+                  });
+                }
+              })
+            ])
+          ]);
+        })) : UI.empty('まだありません')
+      ],
+      actions: [{ label: '閉じる' }]
+    });
+  }
+
+  function exportLegacyTest() {
+    var legacy = {
+      /* schemaVersion をあえて持たせない = v0 形式 */
+      records: Repo.data.trainingRecords.slice(0, 50),
+      body: Repo.data.bodyRecords.slice(0, 20)
+    };
+    if (!legacy.records.length) {
+      legacy.records = [{
+        id: 'legacy-1', date: U.addDays(U.today(), -3), activityId: 'pushup',
+        input: { reps: 50 }, value: 50, unit: '回', load: 28.28, exp: 28.28,
+        statGrowth: { STR: 0.05, VIT: 0.02, END: 0, AGI: 0, DEX: 0 }, createdAt: U.nowIso()
+      }];
+    }
+    var name = 'ore_dake_levelup_legacy_v0_' + U.today() + '.json';
+    if (UI.downloadText(name, JSON.stringify(legacy, null, 2))) {
+      UI.toast('書き出しました: ' + name, 'ok', 3500);
+    } else {
+      UI.toast('書き出せませんでした', 'err');
+    }
+  }
+
+  function recalcAll() {
+    UI.confirm({
+      title: '全記録を再計算しますか？',
+      message: '現在の係数設定で、過去のすべての記録のLoad・EXP・ステータス成長を計算し直します。',
+      warning: '過去の記録の数値が変わります（記録そのものは消えません）。実行前に自動バックアップを作成します。',
+      okLabel: '再計算する'
+    }).then(function (ok) {
+      if (!ok) return;
+      var res = Repo.recalculateAllRecords();
+      UI.toast(res.count + '件を再計算しました' + (res.skipped ? '（' + res.skipped + '件は種目不明のためスキップ）' : ''), 'ok', 3800);
+      ODL.App.refresh();
+    });
+  }
+
+  function resetAll() {
+    UI.confirm({
+      title: 'すべてのデータを初期化',
+      message: 'トレーニング記録・身体データ・パーソナルベストがすべて消えます。',
+      warning: 'この操作は取り消せません。直前の状態は自動バックアップに残りますが、ブラウザのデータを消すと復元できません。',
+      requireText: '初期化',
+      okLabel: '初期化する', danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      Repo.resetAll(false);
+      UI.toast('初期化しました', 'ok');
+      ODL.App.go('home');
+    });
+  }
+
+  /* ---------------------------------------------------------------------
+   * ストリークボーナス表の編集
+   * ------------------------------------------------------------------- */
+  function openStreakEditor() {
+    var rows = U.clone(Repo.data.settings.streak.bonusTable);
+    var listEl = UI.el('div');
+
+    function render() {
+      UI.clear(listEl);
+      rows.forEach(function (row, i) {
+        var dayInput = UI.el('input', { type: 'number', min: '1', step: '1', value: row.days, inputmode: 'numeric',
+          onchange: function () { rows[i].days = U.num(dayInput.value, 1); } });
+        var rateInput = UI.el('input', { type: 'number', min: '0', step: '1', value: Math.round(row.rate * 100), inputmode: 'numeric',
+          onchange: function () { rows[i].rate = U.num(rateInput.value, 0) / 100; } });
+        listEl.appendChild(UI.el('div', { class: 'inline-3', style: { marginBottom: '8px', alignItems: 'center' } }, [
+          UI.el('div', { class: 'unit-suffix' }, [dayInput, UI.el('span', { text: '日' })]),
+          UI.el('div', { class: 'unit-suffix' }, [rateInput, UI.el('span', { text: '%' })]),
+          UI.el('button', { class: 'btn small danger', text: '削除', onclick: function () { rows.splice(i, 1); render(); } })
+        ]));
+      });
+    }
+    render();
+
+    UI.sheet({
+      title: 'ストリークボーナス',
+      content: [
+        UI.el('div', { class: 'hint mb8', text: '「この日数に到達したらEXP +○%」。ステータス成長にはボーナスはかかりません。' }),
+        listEl,
+        UI.el('button', { class: 'btn small block ghost', text: '＋ 行を追加', onclick: function () { rows.push({ days: 1, rate: 0 }); render(); } })
+      ],
+      actions: [
+        { label: 'キャンセル' },
+        {
+          label: '保存', kind: 'primary', onClick: function () {
+            Repo.updateSettings({ streak: { bonusTable: rows } });
+            UI.toast('保存しました', 'ok');
+            ODL.App.refresh();
+          }
+        }
+      ]
+    });
+  }
+
+  /* ---------------------------------------------------------------------
+   * 種目マスタ
+   * ------------------------------------------------------------------- */
+  function openMasterList() {
+    var data = Repo.data;
+    var listEl = UI.el('div', { class: 'list' }, data.activityMasters
+      .slice().sort(function (a, b) { return a.sortOrder - b.sortOrder; })
+      .map(function (m) {
+        var count = data.trainingRecords.filter(function (r) { return r.activityId === m.activityId; }).length;
+        return UI.el('div', { class: 'row tappable', onclick: function () { UI.closeAllSheets(); setTimeout(function () { openMasterForm(m); }, 200); } }, [
+          UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
+          UI.el('div', { class: 'body' }, [
+            UI.el('div', { class: 't', html: U.escapeHtml(m.name) + (m.active ? '' : '<span class="chip" style="background:rgba(109,122,149,.2);color:var(--text-3);border-color:var(--line)">無効</span>') }),
+            UI.el('div', { class: 's', text: ODL.INPUT_TYPES[m.inputType].label + ' ・ 係数 ' + m.loadCoefficient + ' ・ ' + count + '件' })
+          ]),
+          UI.el('div', { class: 'end' }, [UI.el('div', { class: 'sub', text: '編集 ›' })])
+        ]);
+      }));
+
+    UI.sheet({
+      title: '種目マスタ',
+      content: [
+        listEl,
+        UI.el('div', { class: 'hint mt8', text: '記録のある種目は削除できません。使わなくなったら「無効」にしてください（過去の記録は残ります）。' })
+      ],
+      actions: [
+        { label: '閉じる' },
+        { label: '＋ 種目を追加', kind: 'primary', onClick: function () { setTimeout(function () { openMasterForm(null); }, 220); } }
+      ]
+    });
+  }
+
+  function openMasterForm(master) {
+    var isNew = !master;
+    var m = master ? U.clone(master) : {
+      activityId: '', name: '', shortName: '', icon: '🏋️', category: 'strength',
+      inputType: 'reps', unit: '回', loadCoefficient: 4.0, expCoefficient: 1.0,
+      statAllocation: { STR: 100, VIT: 0, END: 0, AGI: 0, DEX: 0 },
+      quickValues: [], active: true, sortOrder: (Repo.data.activityMasters.length + 1) * 10, builtIn: false
+    };
+
+    var nameInput = UI.el('input', { type: 'text', value: m.name, placeholder: '例）プランク' });
+    var iconInput = UI.el('input', { type: 'text', value: m.icon, maxlength: '4', placeholder: '🏋️' });
+    var unitInput = UI.el('input', { type: 'text', value: m.unit, placeholder: '回' });
+
+    var typeSelect = UI.el('select', { onchange: function () { syncUnit(); } },
+      Object.keys(ODL.INPUT_TYPES).map(function (k) {
+        return UI.el('option', { value: k, text: ODL.INPUT_TYPES[k].label });
+      }));
+    typeSelect.value = m.inputType;
+
+    var catSelect = UI.el('select', {}, Object.keys(ODL.CATEGORIES).map(function (k) {
+      return UI.el('option', { value: k, text: ODL.CATEGORIES[k] });
+    }));
+    catSelect.value = m.category;
+
+    function syncUnit() {
+      var defaults = { reps: '回', weight_reps: 'kg・回', minutes: '分', distance_time: 'km' };
+      unitInput.value = defaults[typeSelect.value] || unitInput.value;
+      updateFormula();
+    }
+
+    var loadInput = UI.el('input', { type: 'number', step: '0.1', min: '0.01', value: m.loadCoefficient, inputmode: 'decimal', oninput: updateFormula });
+    var expInput = UI.el('input', { type: 'number', step: '0.1', min: '0.01', value: m.expCoefficient, inputmode: 'decimal', oninput: updateFormula });
+    var quickInput = UI.el('input', { type: 'text', value: (m.quickValues || []).join(', '), placeholder: '例）20, 50, 100' });
+    var orderInput = UI.el('input', { type: 'number', step: '1', value: m.sortOrder, inputmode: 'numeric' });
+
+    var allocInputs = {};
+    var allocTotalEl = UI.el('div', { class: 'hint' });
+    function updateAlloc() {
+      var total = 0;
+      ODL.STATS.forEach(function (k) { total += U.num(allocInputs[k].value, 0); });
+      allocTotalEl.textContent = '合計 ' + U.fmt(total, 0) + '%' + (Math.abs(total - 100) > 0.01 ? '（100%でなくても自動で正規化されます）' : '');
+    }
+    var allocRows = ODL.STATS.map(function (k) {
+      var input = UI.el('input', {
+        type: 'number', step: '5', min: '0', max: '100', inputmode: 'numeric',
+        value: U.num(m.statAllocation[k], 0), oninput: updateAlloc
+      });
+      allocInputs[k] = input;
+      return UI.el('div', { class: 'switch-row' }, [
+        UI.el('div', {}, [
+          UI.el('div', { class: 'lb', style: { color: ODL.STAT_COLORS[k] }, text: k + ' ' + ODL.STAT_LABELS[k] })
+        ]),
+        UI.el('div', { class: 'ctl unit-suffix', style: { width: '110px' } }, [input, UI.el('span', { text: '%' })])
+      ]);
+    });
+
+    var formulaEl = UI.el('div', { class: 'hint' });
+    function updateFormula() {
+      var lc = U.num(loadInput.value, 1);
+      var t = typeSelect.value;
+      var f = {
+        reps: 'Load = ' + lc + ' × √(回数)',
+        weight_reps: 'Load = ' + lc + ' × √(重量 × 回数)',
+        minutes: 'Load = ' + lc + ' × √(分)',
+        distance_time: 'Load = 距離 × ' + lc + ' × ペース補正'
+      }[t];
+      var samples = {
+        reps: [[10, '10回'], [50, '50回'], [100, '100回']],
+        weight_reps: [[null, '30kg×20回'], [null, '40kg×30回']],
+        minutes: [[5, '5分'], [10, '10分'], [30, '30分']],
+        distance_time: [[null, '3km(6分/km)'], [null, '5km(6分/km)'], [null, '10km(6分/km)']]
+      }[t];
+      var fake = { loadCoefficient: lc, inputType: t };
+      var exs = [];
+      if (t === 'reps') { [10, 50, 100].forEach(function (n) { exs.push(n + '回 → ' + U.fmt(C.calculateLoad(fake, { reps: n }, Repo.data.settings).load, 1)); }); }
+      else if (t === 'weight_reps') { [[30, 20], [40, 30]].forEach(function (p) { exs.push(p[0] + 'kg×' + p[1] + '回 → ' + U.fmt(C.calculateLoad(fake, { weight: p[0], reps: p[1] }, Repo.data.settings).load, 1)); }); }
+      else if (t === 'minutes') { [5, 10, 30].forEach(function (n) { exs.push(n + '分 → ' + U.fmt(C.calculateLoad(fake, { minutes: n }, Repo.data.settings).load, 1)); }); }
+      else { [3, 5, 10].forEach(function (n) { exs.push(n + 'km → ' + U.fmt(C.calculateLoad(fake, { distance: n }, Repo.data.settings).load, 1)); }); }
+      formulaEl.innerHTML = U.escapeHtml(f) + '<br>例: ' + U.escapeHtml(exs.join(' ／ '));
+    }
+    updateAlloc();
+    updateFormula();
+
+    var content = [
+      UI.el('div', { class: 'inline-2' }, [
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: 'アイコン' }), iconInput]),
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: '並び順' }), orderInput])
+      ]),
+      UI.el('div', { class: 'field' }, [UI.el('label', { text: '種目名' }), nameInput]),
+      UI.el('div', { class: 'field' }, [UI.el('label', { text: '入力方式' }), typeSelect]),
+      UI.el('div', { class: 'inline-2' }, [
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: '単位' }), unitInput]),
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: 'カテゴリ' }), catSelect])
+      ]),
+      UI.el('div', { class: 'inline-2' }, [
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: '負荷係数' }), loadInput]),
+        UI.el('div', { class: 'field' }, [UI.el('label', { text: 'EXP係数' }), expInput])
+      ]),
+      formulaEl,
+      UI.el('div', { class: 'field mt16' }, [UI.el('label', { text: 'クイック入力（カンマ区切り）' }), quickInput]),
+      UI.el('div', { class: 'section-title', text: 'ステータス配分' }),
+      UI.el('div', {}, allocRows),
+      allocTotalEl
+    ];
+
+    var actions = [{ label: 'キャンセル' }];
+    if (!isNew) {
+      actions.push({
+        label: m.active ? '無効にする' : '有効にする', keepOpen: true,
+        onClick: function (api) {
+          Repo.setActivityActive(m.activityId, !m.active);
+          api.close();
+          UI.toast(m.active ? '無効にしました' : '有効にしました', 'ok');
+          ODL.App.refresh();
+        }
+      });
+    }
+    actions.push({
+      label: '保存', kind: 'primary', keepOpen: true, onClick: function (api) {
+        var alloc = {};
+        ODL.STATS.forEach(function (k) { alloc[k] = U.num(allocInputs[k].value, 0); });
+        var payload = {
+          activityId: m.activityId || U.slugId(nameInput.value || 'activity'),
+          name: nameInput.value.trim(),
+          shortName: nameInput.value.trim(),
+          icon: iconInput.value.trim() || '🏋️',
+          category: catSelect.value,
+          inputType: typeSelect.value,
+          unit: unitInput.value.trim(),
+          loadCoefficient: U.num(loadInput.value, 0),
+          expCoefficient: U.num(expInput.value, 0),
+          statAllocation: alloc,
+          quickValues: quickInput.value.split(',').map(function (v) { return U.num(v, 0); }).filter(function (v) { return v > 0; }),
+          active: m.active !== false,
+          sortOrder: U.num(orderInput.value, 100),
+          builtIn: m.builtIn
+        };
+        var res = Repo.upsertActivityMaster(payload);
+        if (!res.ok) {
+          UI.sheet({ title: '保存できません', content: UI.el('ul', { class: 'errlist' },
+            res.errors.map(function (e) { return UI.el('li', { text: e }); })), actions: [{ label: '閉じる' }] });
+          return;
+        }
+        api.close();
+        UI.toast('保存しました', 'ok');
+        ODL.App.refresh();
+      }
+    });
+
+    UI.sheet({ title: isNew ? '種目を追加' : '種目を編集', content: content, actions: actions });
+  }
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== js/app.js ===== */
+/* =========================================================================
+ * 俺だけレベルアップ / app.js
+ * 画面の組み立て・ルーティング・起動処理・PWA登録
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+  var ODL = global.ODL || (global.ODL = {});
+  var U = ODL.Utils;
+  var Repo = ODL.Repository;
+  var UI = ODL.UI;
+
+  var TABS = [
+    { id: 'home',     label: 'ホーム',   icon: '🏠', title: '俺だけレベルアップ' },
+    { id: 'history',  label: '履歴',     icon: '📅', title: '履歴・カレンダー' },
+    { id: 'status',   label: 'ステータス', icon: '📊', title: 'ステータス' },
+    { id: 'body',     label: '身体',     icon: '📏', title: '身体データ' },
+    { id: 'settings', label: '設定',     icon: '⚙️', title: '設定' }
+  ];
+
+  var current = 'home';
+  var mounted = false;
+
+  var App = ODL.App = {
+
+    boot: function () {
+      var status = Repo.load();
+
+      if (status.state === 'corrupt') { renderRecovery(status, 'corrupt'); return; }
+      if (status.state === 'migration_failed') { renderRecovery(status, 'migration'); return; }
+
+      renderShell();
+      App.go('home');
+
+      if (status.state === 'readonly') {
+        UI.toast('データを保存できませんでした。ブラウザの設定をご確認ください。', 'err', 6000);
+      }
+      if (status.migrated) {
+        UI.toast('データ形式を更新しました（' + status.steps.join(', ') + '）。記録はそのまま引き継がれています。', 'ok', 5000);
+      }
+      registerServiceWorker();
+
+      /* ホーム画面のショートカットから起動された場合 */
+      try {
+        if (/[?&]action=record\b/.test(location.search)) {
+          setTimeout(function () { UI.openRecordSheet({}); }, 320);
+        }
+      } catch (e) { /* noop */ }
+    },
+
+    go: function (tab) {
+      if (!TABS.some(function (t) { return t.id === tab; })) tab = 'home';
+      current = tab;
+      App.refresh();
+      try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+    },
+
+    refresh: function () {
+      if (!mounted) return;
+      var main = document.getElementById('main');
+      var view = UI.views[current];
+      UI.clear(main);
+      try {
+        main.appendChild(view());
+      } catch (e) {
+        console.error(e);
+        main.appendChild(UI.el('div', { class: 'warnbox', text: '画面の表示中に問題が発生しました。アプリを再読み込みしてください。記録は保存されています。' }));
+      }
+
+      var tabbar = document.getElementById('tabbar');
+      Array.prototype.forEach.call(tabbar.children, function (btn) {
+        btn.classList.toggle('active', btn.dataset.tab === current);
+      });
+
+      var meta = TABS.filter(function (t) { return t.id === current; })[0];
+      document.getElementById('appbar-title').textContent = meta.title;
+
+      var st = Repo.state();
+      document.getElementById('lvchip').textContent = 'Lv.' + st.level;
+
+      var fab = document.getElementById('fab');
+      fab.style.display = (current === 'home') ? 'none' : 'flex';
+    },
+
+    get currentTab() { return current; }
+  };
+
+  /* ---------------------------------------------------------------------
+   * シェル
+   * ------------------------------------------------------------------- */
+  function renderShell() {
+    var app = document.getElementById('app');
+    UI.clear(app);
+
+    var bar = UI.el('header', { class: 'appbar' }, [
+      UI.el('h1', { id: 'appbar-title', text: ODL.APP_NAME }),
+      UI.el('span', { class: 'lvchip', id: 'lvchip', text: 'Lv.1' })
+    ]);
+
+    var main = UI.el('main', { id: 'main' });
+
+    var tabbar = UI.el('nav', { class: 'tabbar', id: 'tabbar' }, TABS.map(function (t) {
+      return UI.el('button', {
+        dataset: { tab: t.id },
+        onclick: function () { App.go(t.id); }
+      }, [
+        UI.el('span', { class: 'ic', text: t.icon }),
+        UI.el('span', { text: t.label })
+      ]);
+    }));
+
+    var fab = UI.el('button', {
+      class: 'fab', id: 'fab', text: '＋', 'aria-label': '記録する',
+      onclick: function () { UI.openRecordSheet({}); }
+    });
+
+    app.appendChild(bar);
+    app.appendChild(main);
+    app.appendChild(fab);
+    app.appendChild(tabbar);
+
+    if (!document.getElementById('toast-host')) {
+      document.body.appendChild(UI.el('div', { id: 'toast-host' }));
+    }
+    mounted = true;
+  }
+
+  /* ---------------------------------------------------------------------
+   * 復旧画面（データが壊れている / migration失敗）
+   *   ここでは絶対に自動で上書き・初期化しない。ユーザーが選ぶ。
+   * ------------------------------------------------------------------- */
+  function renderRecovery(status, kind) {
+    var app = document.getElementById('app');
+    UI.clear(app);
+    if (!document.getElementById('toast-host')) {
+      document.body.appendChild(UI.el('div', { id: 'toast-host' }));
+    }
+
+    var title = kind === 'corrupt'
+      ? '保存データを読み込めませんでした'
+      : 'データ形式の更新に失敗しました';
+    var lead = kind === 'corrupt'
+      ? '保存されているデータが壊れている可能性があります。念のため、元のデータには一切手を加えていません。'
+      : '古い形式のデータを新しい形式へ変換できませんでした。元のデータはそのまま残してあります。';
+
+    var box = UI.el('div', { class: 'boot-error' }, [
+      UI.el('h2', { text: '⚠ ' + title }),
+      UI.el('p', { text: lead }),
+      UI.el('div', { class: 'note', text: '詳細: ' + (status.error || '不明') +
+        (status.fromVersion !== undefined ? '（schemaVersion ' + status.fromVersion + ' → ' + status.toVersion + '）' : '') })
+    ]);
+
+    var backups = status.backups || Repo.listAutoBackups();
+    if (backups.length) {
+      box.appendChild(UI.el('div', { class: 'section-title', text: '自動バックアップから復元' }));
+      box.appendChild(UI.el('div', { class: 'list' }, backups.map(function (b) {
+        var obj = Repo.readAutoBackup(b.key);
+        var count = obj && Array.isArray(obj.trainingRecords) ? obj.trainingRecords.length :
+                    (obj && Array.isArray(obj.records) ? obj.records.length : '?');
+        return UI.el('div', { class: 'row' }, [
+          UI.el('div', { class: 'body' }, [
+            UI.el('div', { class: 't', text: b.at.replace(/T/, ' ').slice(0, 19).replace(/-/g, '/') }),
+            UI.el('div', { class: 's', text: '記録 ' + count + '件' })
+          ]),
+          UI.el('div', { class: 'end' }, [
+            UI.el('button', {
+              class: 'btn small primary', text: '復元', onclick: function () {
+                var raw = ODL.Storage.readRaw(b.key);
+                if (!raw) { UI.toast('バックアップを読み込めませんでした', 'err'); return; }
+                /* まだ data が無い状態なので、まっさらから読み込む */
+                Repo.quarantineAndStartFresh();
+                var res = Repo.importFromString(raw, { allowEmpty: true });
+                if (!res.ok) { UI.toast(res.errors[0], 'err', 5000); return; }
+                renderShell(); App.go('home');
+                UI.toast('復元しました', 'ok', 4000);
+              }
+            })
+          ])
+        ]);
+      })));
+    }
+
+    box.appendChild(UI.el('div', { class: 'section-title', text: 'バックアップファイルから復元' }));
+    box.appendChild(UI.el('button', {
+      class: 'btn primary block', text: '⬆ JSONファイルを選んで復元',
+      onclick: function () {
+        var input = UI.el('input', { type: 'file', accept: '.json,application/json', style: { display: 'none' } });
+        document.body.appendChild(input);
+        input.addEventListener('change', function () {
+          var file = input.files && input.files[0];
+          document.body.removeChild(input);
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function () {
+            Repo.quarantineAndStartFresh();
+            var res = Repo.importFromString(String(reader.result), { allowEmpty: true });
+            if (!res.ok) { UI.toast(res.errors[0], 'err', 5000); return; }
+            renderShell(); App.go('home');
+            UI.toast('復元しました', 'ok', 4000);
+          };
+          reader.onerror = function () { UI.toast('ファイルを読み込めませんでした', 'err'); };
+          reader.readAsText(file);
+        });
+        input.click();
+      }
+    }));
+
+    box.appendChild(UI.el('div', { class: 'section-title', text: 'それでも解決しない場合' }));
+    box.appendChild(UI.el('div', { class: 'warnbox', text:
+      '「新しく始める」を選ぶと、読み込めなかったデータは自動バックアップへ退避したうえで、空の状態からスタートします。退避したデータはブラウザのデータを消すまで残ります。' }));
+    box.appendChild(UI.el('button', {
+      class: 'btn danger block mt8', text: '新しく始める（退避してリセット）',
+      onclick: function () {
+        UI.confirm({
+          title: '新しく始めますか？',
+          message: '読み込めなかったデータを退避し、空の状態でアプリを開始します。',
+          requireText: 'はじめる', okLabel: '実行する', danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+          Repo.quarantineAndStartFresh();
+          renderShell(); App.go('home');
+        });
+      }
+    }));
+
+    app.appendChild(box);
+  }
+
+  /* ---------------------------------------------------------------------
+   * PWA
+   * ------------------------------------------------------------------- */
+  function registerServiceWorker() {
+    if (global.ODL_DISABLE_SW) return;   /* 単一HTML版ではSWを使わない */
+    if (!('serviceWorker' in navigator)) return;
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+    try {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* オフライン機能なしでも動作する */ });
+    } catch (e) { /* noop */ }
+  }
+
+  /* 起動 */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { App.boot(); });
+  } else {
+    App.boot();
+  }
+
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+
+</body>
+</html>
