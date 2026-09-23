@@ -302,6 +302,7 @@
         var snapshot = {
           stats: G.statsFromRecords(rebuilt, data.settings),
           pbs: G.pbsFromRecords(rebuilt, data),
+          records: rebuilt,
           dates: rebuilt.map(function (x) { return x.date; })
         };
         var built = G.buildRecord(data, {

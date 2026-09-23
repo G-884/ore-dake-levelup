@@ -8,7 +8,7 @@
   var ODL = global.ODL || (global.ODL = {});
 
   ODL.APP_NAME = '俺だけレベルアップ';
-  ODL.APP_VERSION = '0.1.0';
+  ODL.APP_VERSION = '0.1.1';
 
   /* 保存データのスキーマバージョン。構造を変えたら +1 して migration を足す */
   ODL.CURRENT_SCHEMA_VERSION = 1;

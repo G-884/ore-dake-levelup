@@ -54,26 +54,57 @@
     return stats;
   };
 
-  /* 記録集合からPB表を求める */
+  /* 記録集合からPB表を求める。
+     種目ごとに、指標（最高回数 / 最長距離 / ベストペース …）それぞれの最高記録を持つ。 */
   G.pbsFromRecords = function (records, data) {
     var masters = G.masterMap(data);
-    var pbs = {};
+    var byActivity = {};
     G.sortRecords(records).forEach(function (r) {
-      var m = masters[r.activityId];
-      if (!m) return;
-      var v = C.pbValue(m, r.input || {});
-      if (v <= 0) return;
-      var cur = pbs[r.activityId];
-      if (!cur || v > U.num(cur.value, 0) + 1e-9) {
-        pbs[r.activityId] = {
-          activityId: r.activityId,
-          value: U.round(v, 4),
-          label: C.pbLabel(m, r),
-          recordId: r.id,
-          date: r.date,
-          input: U.clone(r.input || {})
+      if (!masters[r.activityId]) return;
+      (byActivity[r.activityId] = byActivity[r.activityId] || []).push(r);
+    });
+
+    var pbs = {};
+    Object.keys(byActivity).forEach(function (activityId) {
+      var master = masters[activityId];
+      var list = byActivity[activityId];
+      var metrics = {};
+
+      C.pbMetrics(master).forEach(function (def) {
+        var bestValue = null, bestRecord = null;
+        list.forEach(function (r) {
+          var v = C.pbMetricValue(master, r.input || {}, def.key);
+          if (v === null) return;
+          var better = (bestValue === null) ||
+            (def.direction === 'min' ? v < bestValue - 1e-9 : v > bestValue + 1e-9);
+          if (better) { bestValue = v; bestRecord = r; }
+        });
+        if (bestRecord === null) return;
+        metrics[def.key] = {
+          key: def.key,
+          label: def.label,
+          primary: !!def.primary,
+          value: U.round(bestValue, 6),
+          text: C.pbMetricText(master, bestRecord.input || {}, def.key),
+          recordId: bestRecord.id,
+          date: bestRecord.date,
+          input: U.clone(bestRecord.input || {})
         };
-      }
+      });
+
+      var primary = metrics[C.primaryPbMetric(master).key];
+      if (!primary) return;
+
+      pbs[activityId] = {
+        activityId: activityId,
+        /* 代表指標。既存の表示・集計はこちらを見る */
+        value: primary.value,
+        label: primary.text,
+        recordId: primary.recordId,
+        date: primary.date,
+        input: primary.input,
+        metrics: metrics
+      };
     });
     return pbs;
   };
@@ -91,6 +122,7 @@
     return {
       stats: G.statsFromRecords(before, data.settings),
       pbs: G.pbsFromRecords(before, data),
+      records: before,
       dates: before.map(function (r) { return r.date; })
     };
   };
@@ -163,9 +195,13 @@
 
     var loadRes = C.calculateLoad(master, input, settings);
 
-    /* PB判定は「この記録より前のPB」と比較する */
+    /* PB判定は「この記録より前の、同じ種目の記録」すべてと比較する */
+    var priorSameActivity = (snapshot.records || []).filter(function (r) {
+      return r.activityId === master.activityId;
+    });
+    var pbEval = C.evaluatePersonalBest(master, input, priorSameActivity, settings);
+    var isPb = pbEval.isPb;
     var currentPb = snapshot.pbs[master.activityId] || null;
-    var isPb = settings.pb.enabled && C.isNewPersonalBest(master, input, currentPb);
 
     /* ストリークはこの記録の日付時点で、この記録自身も含めて評価する */
     var dates = snapshot.dates.slice();
@@ -183,6 +219,10 @@
     breakdown.paceFactor = loadRes.detail.paceFactor;
     breakdown.pace = loadRes.detail.pace;
     breakdown.previousPb = currentPb ? currentPb.value : null;
+    /* どの指標を更新したのか（最長距離 / ベストペース など）を記録に残す */
+    breakdown.pbHits = pbEval.hits.map(function (h) {
+      return { key: h.key, label: h.label, text: h.text, previous: h.previous };
+    });
 
     return {
       activityId: master.activityId,

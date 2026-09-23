@@ -527,7 +527,7 @@ window.ODL_DISABLE_SW = true;
   var ODL = global.ODL || (global.ODL = {});
 
   ODL.APP_NAME = '俺だけレベルアップ';
-  ODL.APP_VERSION = '0.1.0';
+  ODL.APP_VERSION = '0.1.1';
 
   /* 保存データのスキーマバージョン。構造を変えたら +1 して migration を足す */
   ODL.CURRENT_SCHEMA_VERSION = 1;
@@ -1624,31 +1624,129 @@ window.ODL_DISABLE_SW = true;
 
   /* ---------------------------------------------------------------------
    * パーソナルベスト
-   *   1回の記録の「代表値」で比較する。
-   *   reps → 回数 / weight_reps → 重量×回数 / minutes → 分 / distance_time → km
+   *
+   * 種目ごとに「更新されうる指標」を複数持てるようにしてある。
+   * 例えばランニングは、距離を伸ばしたときだけでなく、
+   * 同じ距離を速く走ったときにもPBになってほしいので、
+   *   ・最長距離（大きいほど良い）
+   *   ・ベストペース（小さいほど良い）
+   * の2つを見る。
+   *
+   * ペースの比較対象は「その記録と同じか、それ以上の距離の記録」だけ。
+   * こうすると 3km の全力走のペースが 5km のPBを塞いでしまう、ということが起きない。
    * ------------------------------------------------------------------- */
-  C.pbValue = function (master, input) {
+  C.pbMetrics = function (master) {
     switch (master.inputType) {
-      case 'reps':        return U.num(input.reps, 0);
-      case 'weight_reps': return U.num(input.weight, 0) * U.num(input.reps, 0);
-      case 'minutes':     return U.num(input.minutes, 0);
-      case 'distance_time': return U.num(input.distance, 0);
-      default:            return 0;
+      case 'distance_time':
+        return [
+          { key: 'distance', label: '最長距離', direction: 'max', primary: true },
+          { key: 'pace',     label: 'ベストペース', direction: 'min', primary: false }
+        ];
+      case 'weight_reps':
+        return [{ key: 'volume', label: '最高記録', direction: 'max', primary: true }];
+      case 'minutes':
+        return [{ key: 'minutes', label: '最長時間', direction: 'max', primary: true }];
+      default:
+        return [{ key: 'reps', label: '最高回数', direction: 'max', primary: true }];
     }
   };
 
-  C.pbLabel = function (master, record) {
-    var input = record.input || {};
-    switch (master.inputType) {
-      case 'weight_reps':
-        return U.fmt(U.num(input.weight, 0), 1) + 'kg × ' + U.fmtInt(input.reps) + '回';
-      case 'distance_time':
-        return U.fmt(U.num(input.distance, 0), 2) + 'km';
-      case 'minutes':
-        return U.fmtInt(input.minutes) + '分';
-      default:
-        return U.fmtInt(input.reps) + '回';
+  C.primaryPbMetric = function (master) {
+    var list = C.pbMetrics(master);
+    for (var i = 0; i < list.length; i++) if (list[i].primary) return list[i];
+    return list[0];
+  };
+
+  /* 指標の数値。計算できないときは null（比較対象から外れる） */
+  C.pbMetricValue = function (master, input, key) {
+    input = input || {};
+    switch (key) {
+      case 'distance': {
+        var d = U.num(input.distance, 0);
+        return d > 0 ? d : null;
+      }
+      case 'pace': {
+        var dd = U.num(input.distance, 0), t = U.num(input.durationMin, 0);
+        return (dd > 0 && t > 0) ? t / dd : null;
+      }
+      case 'volume': {
+        var w = U.num(input.weight, 0), r = U.num(input.reps, 0);
+        return (w > 0 && r > 0) ? w * r : null;
+      }
+      case 'minutes': {
+        var m = U.num(input.minutes, 0);
+        return m > 0 ? m : null;
+      }
+      case 'reps': {
+        var rr = U.num(input.reps, 0);
+        return rr > 0 ? rr : null;
+      }
+      default: return null;
     }
+  };
+
+  C.pbMetricText = function (master, input, key) {
+    input = input || {};
+    switch (key) {
+      case 'distance': return U.fmt(U.num(input.distance, 0), 2) + 'km';
+      case 'pace':     return C.formatPace(U.num(input.durationMin, 0) / Math.max(U.num(input.distance, 0), 1e-9));
+      case 'volume':   return U.fmt(U.num(input.weight, 0), 1) + 'kg × ' + U.fmtInt(input.reps) + '回';
+      case 'minutes':  return U.fmtInt(input.minutes) + '分';
+      default:         return U.fmtInt(input.reps) + '回';
+    }
+  };
+
+  /* 代表指標の値（履歴の value / 集計で使う） */
+  C.pbValue = function (master, input) {
+    var v = C.pbMetricValue(master, input, C.primaryPbMetric(master).key);
+    return v === null ? 0 : v;
+  };
+
+  C.pbLabel = function (master, record) {
+    return C.pbMetricText(master, record.input || {}, C.primaryPbMetric(master).key);
+  };
+
+  /* PB判定。過去の記録（同一種目・この記録より前）と突き合わせる。
+     同値では更新扱いにしない。 */
+  C.evaluatePersonalBest = function (master, input, priorRecords, settings) {
+    var hits = [];
+    if (!settings || !settings.pb || !settings.pb.enabled) return { isPb: false, hits: hits };
+    var prior = priorRecords || [];
+
+    C.pbMetrics(master).forEach(function (def) {
+      var value = C.pbMetricValue(master, input, def.key);
+      if (value === null) return;
+
+      var best = null;
+
+      if (def.key === 'pace') {
+        /* 同じか、それ以上の距離の記録だけを比較対象にする */
+        var dist = U.num(input.distance, 0);
+        prior.forEach(function (r) {
+          if (U.num(r.input && r.input.distance, 0) + 1e-9 < dist) return;
+          var p = C.pbMetricValue(master, r.input, 'pace');
+          if (p === null) return;
+          if (best === null || p < best) best = p;
+        });
+        /* 比較対象がない＝この距離は初めて。距離のほうでPB判定されるのでここでは出さない */
+        if (best === null) return;
+        if (value < best - 1e-9) {
+          hits.push({ key: def.key, label: def.label, text: C.pbMetricText(master, input, def.key), value: value, previous: best });
+        }
+        return;
+      }
+
+      prior.forEach(function (r) {
+        var pv = C.pbMetricValue(master, r.input, def.key);
+        if (pv === null) return;
+        if (best === null || pv > best) best = pv;
+      });
+      if (best === null || value > best + 1e-9) {
+        hits.push({ key: def.key, label: def.label, text: C.pbMetricText(master, input, def.key), value: value, previous: best });
+      }
+    });
+
+    return { isPb: hits.length > 0, hits: hits };
   };
 
   /* 記録の代表表示値（履歴などで使う） */
@@ -1675,17 +1773,30 @@ window.ODL_DISABLE_SW = true;
     var h = Math.floor(total / 3600);
     var m = Math.floor((total % 3600) / 60);
     var s = total % 60;
-    if (h > 0) return h + '時間' + m + '分';
+    if (h > 0) return h + '時間' + m + '分' + (s > 0 ? s + '秒' : '');
     if (s > 0) return m + '分' + s + '秒';
     return m + '分';
   };
 
-  /* PB判定（同値では更新扱いにしない） */
-  C.isNewPersonalBest = function (master, input, currentPb) {
-    var v = C.pbValue(master, input);
-    if (v <= 0) return false;
-    if (!currentPb) return true;
-    return v > U.num(currentPb.value, 0) + 1e-9;
+  /* ペース（分/km）を 5:42 /km の形にする */
+  C.formatPace = function (minPerKm) {
+    var v = U.num(minPerKm, 0);
+    if (!isFinite(v) || v <= 0) return '—';
+    var total = Math.round(v * 60);
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return m + ':' + U.pad2(s) + ' /km';
+  };
+
+  /* 分（小数）を 分・秒 に分解する（入力欄用） */
+  C.splitMinutes = function (minutes) {
+    var total = Math.round(U.num(minutes, 0) * 60);
+    return { minutes: Math.floor(total / 60), seconds: total % 60 };
+  };
+
+  /* 分・秒 を分（小数）にまとめる */
+  C.joinMinutes = function (min, sec) {
+    return U.round(U.num(min, 0) + U.num(sec, 0) / 60, 6);
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1747,26 +1858,57 @@ window.ODL_DISABLE_SW = true;
     return stats;
   };
 
-  /* 記録集合からPB表を求める */
+  /* 記録集合からPB表を求める。
+     種目ごとに、指標（最高回数 / 最長距離 / ベストペース …）それぞれの最高記録を持つ。 */
   G.pbsFromRecords = function (records, data) {
     var masters = G.masterMap(data);
-    var pbs = {};
+    var byActivity = {};
     G.sortRecords(records).forEach(function (r) {
-      var m = masters[r.activityId];
-      if (!m) return;
-      var v = C.pbValue(m, r.input || {});
-      if (v <= 0) return;
-      var cur = pbs[r.activityId];
-      if (!cur || v > U.num(cur.value, 0) + 1e-9) {
-        pbs[r.activityId] = {
-          activityId: r.activityId,
-          value: U.round(v, 4),
-          label: C.pbLabel(m, r),
-          recordId: r.id,
-          date: r.date,
-          input: U.clone(r.input || {})
+      if (!masters[r.activityId]) return;
+      (byActivity[r.activityId] = byActivity[r.activityId] || []).push(r);
+    });
+
+    var pbs = {};
+    Object.keys(byActivity).forEach(function (activityId) {
+      var master = masters[activityId];
+      var list = byActivity[activityId];
+      var metrics = {};
+
+      C.pbMetrics(master).forEach(function (def) {
+        var bestValue = null, bestRecord = null;
+        list.forEach(function (r) {
+          var v = C.pbMetricValue(master, r.input || {}, def.key);
+          if (v === null) return;
+          var better = (bestValue === null) ||
+            (def.direction === 'min' ? v < bestValue - 1e-9 : v > bestValue + 1e-9);
+          if (better) { bestValue = v; bestRecord = r; }
+        });
+        if (bestRecord === null) return;
+        metrics[def.key] = {
+          key: def.key,
+          label: def.label,
+          primary: !!def.primary,
+          value: U.round(bestValue, 6),
+          text: C.pbMetricText(master, bestRecord.input || {}, def.key),
+          recordId: bestRecord.id,
+          date: bestRecord.date,
+          input: U.clone(bestRecord.input || {})
         };
-      }
+      });
+
+      var primary = metrics[C.primaryPbMetric(master).key];
+      if (!primary) return;
+
+      pbs[activityId] = {
+        activityId: activityId,
+        /* 代表指標。既存の表示・集計はこちらを見る */
+        value: primary.value,
+        label: primary.text,
+        recordId: primary.recordId,
+        date: primary.date,
+        input: primary.input,
+        metrics: metrics
+      };
     });
     return pbs;
   };
@@ -1784,6 +1926,7 @@ window.ODL_DISABLE_SW = true;
     return {
       stats: G.statsFromRecords(before, data.settings),
       pbs: G.pbsFromRecords(before, data),
+      records: before,
       dates: before.map(function (r) { return r.date; })
     };
   };
@@ -1856,9 +1999,13 @@ window.ODL_DISABLE_SW = true;
 
     var loadRes = C.calculateLoad(master, input, settings);
 
-    /* PB判定は「この記録より前のPB」と比較する */
+    /* PB判定は「この記録より前の、同じ種目の記録」すべてと比較する */
+    var priorSameActivity = (snapshot.records || []).filter(function (r) {
+      return r.activityId === master.activityId;
+    });
+    var pbEval = C.evaluatePersonalBest(master, input, priorSameActivity, settings);
+    var isPb = pbEval.isPb;
     var currentPb = snapshot.pbs[master.activityId] || null;
-    var isPb = settings.pb.enabled && C.isNewPersonalBest(master, input, currentPb);
 
     /* ストリークはこの記録の日付時点で、この記録自身も含めて評価する */
     var dates = snapshot.dates.slice();
@@ -1876,6 +2023,10 @@ window.ODL_DISABLE_SW = true;
     breakdown.paceFactor = loadRes.detail.paceFactor;
     breakdown.pace = loadRes.detail.pace;
     breakdown.previousPb = currentPb ? currentPb.value : null;
+    /* どの指標を更新したのか（最長距離 / ベストペース など）を記録に残す */
+    breakdown.pbHits = pbEval.hits.map(function (h) {
+      return { key: h.key, label: h.label, text: h.text, previous: h.previous };
+    });
 
     return {
       activityId: master.activityId,
@@ -2202,6 +2353,7 @@ window.ODL_DISABLE_SW = true;
         var snapshot = {
           stats: G.statsFromRecords(rebuilt, data.settings),
           pbs: G.pbsFromRecords(rebuilt, data),
+          records: rebuilt,
           dates: rebuilt.map(function (x) { return x.date; })
         };
         var built = G.buildRecord(data, {
@@ -2645,6 +2797,16 @@ window.ODL_DISABLE_SW = true;
 
   UI.empty = function (text) { return UI.el('div', { class: 'empty', text: text }); };
 
+  /* PBを1行にまとめる。複数指標（最長距離・ベストペースなど）があれば並べる */
+  UI.pbSummary = function (pb, short) {
+    if (!pb) return '';
+    var metrics = pb.metrics ? Object.keys(pb.metrics).map(function (k) { return pb.metrics[k]; }) : [];
+    if (!metrics.length) return pb.label + (short ? '' : '（' + ODL.Utils.formatDateJa(pb.date) + '）');
+    return metrics.map(function (m) {
+      return short ? m.text : m.label + ' ' + m.text + '（' + ODL.Utils.formatDateJa(m.date) + '）';
+    }).join(short ? ' / ' : '　');
+  };
+
   UI.metric = function (value, label, cls) {
     return UI.el('div', { class: 'metric ' + (cls || '') }, [
       UI.el('div', { class: 'v', html: value }),
@@ -2852,7 +3014,7 @@ window.ODL_DISABLE_SW = true;
         }, [
           UI.el('div', { class: 'em', text: m.icon || '🏋️' }),
           UI.el('div', { class: 'nm', text: m.name }),
-          UI.el('div', { class: 'pb', text: pb ? 'PB ' + pb.label : '記録なし' })
+          UI.el('div', { class: 'pb', text: pb ? 'PB ' + UI.pbSummary(pb, true) : '記録なし' })
         ]);
       }))
     });
@@ -2886,17 +3048,59 @@ window.ODL_DISABLE_SW = true;
 
     /* 数値入力 */
     fields.forEach(function (f) {
-      var meta = FIELD_META[f];
       var initial = '';
       if (editing && editing.input && editing.input[f] !== undefined) initial = editing.input[f];
       else if (presetInput && presetInput[f] !== undefined) initial = presetInput[f];
 
+      /* タイムだけは「分」「秒」の2欄で入力する（22分30秒を22.5と打たなくてよいように） */
+      if (f === 'durationMin') {
+        var split = (initial !== '' && U.num(initial, 0) > 0)
+          ? C.splitMinutes(initial) : { minutes: '', seconds: '' };
+
+        var minInput = UI.el('input', {
+          type: 'number', step: '1', min: '0', inputmode: 'numeric',
+          placeholder: '0', value: split.minutes, oninput: updatePreview
+        });
+        var secInput = UI.el('input', {
+          type: 'number', step: '1', min: '0', max: '59', inputmode: 'numeric',
+          placeholder: '00', value: split.seconds, oninput: updatePreview
+        });
+        inputs[f] = {
+          read: function () {
+            var hasMin = String(minInput.value).trim() !== '';
+            var hasSec = String(secInput.value).trim() !== '';
+            if (!hasMin && !hasSec) return '';
+            var mm = hasMin ? U.num(minInput.value, 0) : 0;
+            var ss = hasSec ? U.num(secInput.value, 0) : 0;
+            if (mm < 0 || ss < 0) return -1;
+            return C.joinMinutes(mm, ss);
+          },
+          focus: function () { try { minInput.focus(); } catch (e) {} }
+        };
+
+        content.push(UI.el('div', { class: 'field' }, [
+          UI.el('label', { text: 'タイム（任意）' }),
+          UI.el('div', { class: 'inline-2' }, [
+            UI.el('div', { class: 'unit-suffix' }, [minInput, UI.el('span', { text: '分' })]),
+            UI.el('div', { class: 'unit-suffix' }, [secInput, UI.el('span', { text: '秒' })])
+          ]),
+          UI.el('div', { class: 'hint', text:
+            '例）22分30秒 →「22」と「30」。未入力でも記録できますが、入力するとペース補正とベストペースの判定に使われます（基準 ' +
+            U.fmt(data.settings.pace.basePaceMinPerKm, 0) + '分/km）。' })
+        ]));
+        return;
+      }
+
+      var meta = FIELD_META[f];
       var input = UI.el('input', {
         type: 'number', step: meta.step, min: '0', inputmode: meta.inputmode,
         placeholder: '0', value: initial,
         oninput: updatePreview
       });
-      inputs[f] = input;
+      inputs[f] = {
+        read: function () { return input.value; },
+        focus: function () { try { input.focus(); } catch (e) {} }
+      };
 
       var wrap = UI.el('div', { class: 'field' }, [
         UI.el('label', { text: meta.label }),
@@ -2913,9 +3117,6 @@ window.ODL_DISABLE_SW = true;
         }));
         wrap.appendChild(quick);
       }
-      if (f === 'durationMin') {
-        wrap.appendChild(UI.el('div', { class: 'hint', text: '未入力でもOK。入力するとペース補正がかかります（基準 ' + U.fmt(data.settings.pace.basePaceMinPerKm, 0) + '分/km）。' }));
-      }
       content.push(wrap);
     });
 
@@ -2928,7 +3129,7 @@ window.ODL_DISABLE_SW = true;
     content.push(preview);
 
     if (pb && !editing) {
-      content.push(UI.el('div', { class: 'hint', style: { marginTop: '8px' }, text: '現在のベスト: ' + pb.label + '（' + U.formatDateJa(pb.date) + '）' }));
+      content.push(UI.el('div', { class: 'hint', style: { marginTop: '8px' }, text: '現在のベスト: ' + UI.pbSummary(pb) }));
     }
 
     var sheet = UI.sheet({
@@ -2953,15 +3154,16 @@ window.ODL_DISABLE_SW = true;
 
     function collect() {
       var obj = {};
-      fields.forEach(function (f) { obj[f] = inputs[f].value; });
+      fields.forEach(function (f) { obj[f] = inputs[f].read(); });
       return obj;
     }
 
     function updatePreview() {
       UI.clear(preview);
+      var raw = collect();
       var input = {};
       fields.forEach(function (f) {
-        var n = U.num(inputs[f].value, NaN);
+        var n = U.num(raw[f], NaN);
         if (isFinite(n) && n > 0) input[f] = n;
       });
       var v = C.validateInput(master, input);
@@ -2997,10 +3199,11 @@ window.ODL_DISABLE_SW = true;
         rows.push(UI.kv('ストリークボーナス', '+' + Math.round(built.expBreakdown.streakRate * 100) + '%'));
       }
       if (built.isPersonalBest) {
-        rows.push(UI.kv('PBボーナス', '<span style="color:var(--gold)">+' + Math.round(built.expBreakdown.pbRate * 100) + '%  🎉</span>'));
+        var hitNames = (built.expBreakdown.pbHits || []).map(function (h) { return h.label; }).join('・');
+        rows.push(UI.kv('PBボーナス', '<span style="color:var(--gold)">+' + Math.round(built.expBreakdown.pbRate * 100) + '%  🎉 ' + U.escapeHtml(hitNames) + '</span>'));
       }
       if (built.expBreakdown.paceFactor && built.expBreakdown.pace) {
-        rows.push(UI.kv('ペース', U.fmt(built.expBreakdown.pace, 2) + ' 分/km（補正 ×' + U.fmt(built.expBreakdown.paceFactor, 2) + '）'));
+        rows.push(UI.kv('ペース', C.formatPace(built.expBreakdown.pace) + '（補正 ×' + U.fmt(built.expBreakdown.paceFactor, 2) + '）'));
       }
       var growth = ODL.STATS.filter(function (s) { return built.statGrowth[s] > 0; })
         .map(function (s) { return s + ' +' + U.fmt(built.statGrowth[s], 2); }).join('  ');
@@ -3073,7 +3276,14 @@ window.ODL_DISABLE_SW = true;
     }
 
     if (rec.isPersonalBest) {
-      box.appendChild(UI.el('div', { class: 'banner pb', text: '🎉 PERSONAL BEST!' }));
+      var hits = rec.expBreakdown && rec.expBreakdown.pbHits ? rec.expBreakdown.pbHits : [];
+      box.appendChild(UI.el('div', { class: 'banner pb' }, [
+        UI.el('div', { text: '🎉 PERSONAL BEST!' }),
+        hits.length ? UI.el('div', {
+          style: { fontSize: '12px', fontWeight: '700', marginTop: '4px', letterSpacing: '0' },
+          text: hits.map(function (h) { return h.label + ' ' + h.text; }).join('　/　')
+        }) : null
+      ]));
     }
     if (res.levelUp) {
       box.appendChild(UI.el('div', { class: 'banner lvup', text: '⬆ LEVEL UP!  Lv.' + res.levelBefore + ' → Lv.' + res.levelAfter }));
@@ -3447,7 +3657,7 @@ window.ODL_DISABLE_SW = true;
     if (bd.base !== undefined) rows.push(UI.kv('　内訳: 基本', U.fmt(bd.base, 1)));
     if (bd.streakRate) rows.push(UI.kv('　内訳: ストリーク', '+' + Math.round(bd.streakRate * 100) + '%（' + bd.streakDays + '日）'));
     if (bd.pbRate) rows.push(UI.kv('　内訳: PB', '+' + Math.round(bd.pbRate * 100) + '%'));
-    if (bd.paceFactor && bd.pace) rows.push(UI.kv('　ペース', U.fmt(bd.pace, 2) + ' 分/km ×' + U.fmt(bd.paceFactor, 2)));
+    if (bd.paceFactor && bd.pace) rows.push(UI.kv('ペース', C.formatPace(bd.pace) + '（補正 ×' + U.fmt(bd.paceFactor, 2) + '）'));
 
     var growth = ODL.STATS.filter(function (s) { return record.statGrowth[s] > 0; });
     if (growth.length) {
@@ -3455,7 +3665,13 @@ window.ODL_DISABLE_SW = true;
         return '<span style="color:' + ODL.STAT_COLORS[s] + '">' + s + ' +' + U.fmt(record.statGrowth[s], 3) + '</span>';
       }).join('　')));
     }
-    if (record.isPersonalBest) rows.push(UI.kv('パーソナルベスト', '<span style="color:var(--gold)">🎉 更新記録</span>'));
+    if (record.isPersonalBest) {
+      var hits = (record.expBreakdown && record.expBreakdown.pbHits) || [];
+      var hitText = hits.length
+        ? hits.map(function (h) { return h.label + ' ' + h.text; }).join('　/　')
+        : '更新記録';
+      rows.push(UI.kv('パーソナルベスト', '<span style="color:var(--gold)">🎉 ' + U.escapeHtml(hitText) + '</span>'));
+    }
     if (record.note) rows.push(UI.kv('メモ', U.escapeHtml(record.note)));
     rows.push(UI.kv('記録ID', '<span style="font-size:10px;color:var(--text-3)">' + U.escapeHtml(record.id) + '</span>'));
 
@@ -3571,14 +3787,39 @@ window.ODL_DISABLE_SW = true;
     data.activityMasters.slice().sort(function (a, b) { return a.sortOrder - b.sortOrder; }).forEach(function (m) {
       var pb = st.pbs[m.activityId];
       if (!pb) return;
-      pbRows.push(UI.el('div', { class: 'row' }, [
+      var metrics = Object.keys(pb.metrics || {}).map(function (k) { return pb.metrics[k]; });
+      if (!metrics.length) metrics = [{ label: '記録', text: pb.label, date: pb.date }];
+
+      if (metrics.length === 1) {
+        pbRows.push(UI.el('div', { class: 'row' }, [
+          UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
+          UI.el('div', { class: 'body' }, [
+            UI.el('div', { class: 't', text: m.name }),
+            UI.el('div', { class: 's', text: U.formatDateJa(metrics[0].date, true) })
+          ]),
+          UI.el('div', { class: 'end' }, [
+            UI.el('div', { class: 'exp', style: { color: 'var(--gold)' }, text: metrics[0].text })
+          ])
+        ]));
+        return;
+      }
+
+      /* 指標が複数ある種目（ランニングなど）は縦に並べる */
+      pbRows.push(UI.el('div', { class: 'row', style: { alignItems: 'flex-start' } }, [
         UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
         UI.el('div', { class: 'body' }, [
           UI.el('div', { class: 't', text: m.name }),
-          UI.el('div', { class: 's', text: U.formatDateJa(pb.date, true) })
-        ]),
-        UI.el('div', { class: 'end' }, [
-          UI.el('div', { class: 'exp', style: { color: 'var(--gold)' }, text: pb.label })
+          UI.el('div', { style: { marginTop: '4px' } }, metrics.map(function (mm) {
+            return UI.el('div', {
+              style: { display: 'flex', justifyContent: 'space-between', gap: '10px', fontSize: '12px', padding: '2px 0' }
+            }, [
+              UI.el('span', { style: { color: 'var(--text-3)' }, text: mm.label }),
+              UI.el('span', {}, [
+                UI.el('b', { style: { color: 'var(--gold)' }, text: mm.text }),
+                UI.el('span', { style: { color: 'var(--text-3)', marginLeft: '8px' }, text: U.formatDateJa(mm.date) })
+              ])
+            ]);
+          }))
         ])
       ]));
     });

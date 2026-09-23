@@ -72,14 +72,39 @@
     data.activityMasters.slice().sort(function (a, b) { return a.sortOrder - b.sortOrder; }).forEach(function (m) {
       var pb = st.pbs[m.activityId];
       if (!pb) return;
-      pbRows.push(UI.el('div', { class: 'row' }, [
+      var metrics = Object.keys(pb.metrics || {}).map(function (k) { return pb.metrics[k]; });
+      if (!metrics.length) metrics = [{ label: '記録', text: pb.label, date: pb.date }];
+
+      if (metrics.length === 1) {
+        pbRows.push(UI.el('div', { class: 'row' }, [
+          UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
+          UI.el('div', { class: 'body' }, [
+            UI.el('div', { class: 't', text: m.name }),
+            UI.el('div', { class: 's', text: U.formatDateJa(metrics[0].date, true) })
+          ]),
+          UI.el('div', { class: 'end' }, [
+            UI.el('div', { class: 'exp', style: { color: 'var(--gold)' }, text: metrics[0].text })
+          ])
+        ]));
+        return;
+      }
+
+      /* 指標が複数ある種目（ランニングなど）は縦に並べる */
+      pbRows.push(UI.el('div', { class: 'row', style: { alignItems: 'flex-start' } }, [
         UI.el('div', { class: 'icon', text: m.icon || '🏋️' }),
         UI.el('div', { class: 'body' }, [
           UI.el('div', { class: 't', text: m.name }),
-          UI.el('div', { class: 's', text: U.formatDateJa(pb.date, true) })
-        ]),
-        UI.el('div', { class: 'end' }, [
-          UI.el('div', { class: 'exp', style: { color: 'var(--gold)' }, text: pb.label })
+          UI.el('div', { style: { marginTop: '4px' } }, metrics.map(function (mm) {
+            return UI.el('div', {
+              style: { display: 'flex', justifyContent: 'space-between', gap: '10px', fontSize: '12px', padding: '2px 0' }
+            }, [
+              UI.el('span', { style: { color: 'var(--text-3)' }, text: mm.label }),
+              UI.el('span', {}, [
+                UI.el('b', { style: { color: 'var(--gold)' }, text: mm.text }),
+                UI.el('span', { style: { color: 'var(--text-3)', marginLeft: '8px' }, text: U.formatDateJa(mm.date) })
+              ])
+            ]);
+          }))
         ])
       ]));
     });

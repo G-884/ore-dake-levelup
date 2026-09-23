@@ -178,6 +178,16 @@
 
   UI.empty = function (text) { return UI.el('div', { class: 'empty', text: text }); };
 
+  /* PBを1行にまとめる。複数指標（最長距離・ベストペースなど）があれば並べる */
+  UI.pbSummary = function (pb, short) {
+    if (!pb) return '';
+    var metrics = pb.metrics ? Object.keys(pb.metrics).map(function (k) { return pb.metrics[k]; }) : [];
+    if (!metrics.length) return pb.label + (short ? '' : '（' + ODL.Utils.formatDateJa(pb.date) + '）');
+    return metrics.map(function (m) {
+      return short ? m.text : m.label + ' ' + m.text + '（' + ODL.Utils.formatDateJa(m.date) + '）';
+    }).join(short ? ' / ' : '　');
+  };
+
   UI.metric = function (value, label, cls) {
     return UI.el('div', { class: 'metric ' + (cls || '') }, [
       UI.el('div', { class: 'v', html: value }),

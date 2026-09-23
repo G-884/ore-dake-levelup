@@ -52,7 +52,7 @@
         }, [
           UI.el('div', { class: 'em', text: m.icon || '🏋️' }),
           UI.el('div', { class: 'nm', text: m.name }),
-          UI.el('div', { class: 'pb', text: pb ? 'PB ' + pb.label : '記録なし' })
+          UI.el('div', { class: 'pb', text: pb ? 'PB ' + UI.pbSummary(pb, true) : '記録なし' })
         ]);
       }))
     });
@@ -86,17 +86,59 @@
 
     /* 数値入力 */
     fields.forEach(function (f) {
-      var meta = FIELD_META[f];
       var initial = '';
       if (editing && editing.input && editing.input[f] !== undefined) initial = editing.input[f];
       else if (presetInput && presetInput[f] !== undefined) initial = presetInput[f];
 
+      /* タイムだけは「分」「秒」の2欄で入力する（22分30秒を22.5と打たなくてよいように） */
+      if (f === 'durationMin') {
+        var split = (initial !== '' && U.num(initial, 0) > 0)
+          ? C.splitMinutes(initial) : { minutes: '', seconds: '' };
+
+        var minInput = UI.el('input', {
+          type: 'number', step: '1', min: '0', inputmode: 'numeric',
+          placeholder: '0', value: split.minutes, oninput: updatePreview
+        });
+        var secInput = UI.el('input', {
+          type: 'number', step: '1', min: '0', max: '59', inputmode: 'numeric',
+          placeholder: '00', value: split.seconds, oninput: updatePreview
+        });
+        inputs[f] = {
+          read: function () {
+            var hasMin = String(minInput.value).trim() !== '';
+            var hasSec = String(secInput.value).trim() !== '';
+            if (!hasMin && !hasSec) return '';
+            var mm = hasMin ? U.num(minInput.value, 0) : 0;
+            var ss = hasSec ? U.num(secInput.value, 0) : 0;
+            if (mm < 0 || ss < 0) return -1;
+            return C.joinMinutes(mm, ss);
+          },
+          focus: function () { try { minInput.focus(); } catch (e) {} }
+        };
+
+        content.push(UI.el('div', { class: 'field' }, [
+          UI.el('label', { text: 'タイム（任意）' }),
+          UI.el('div', { class: 'inline-2' }, [
+            UI.el('div', { class: 'unit-suffix' }, [minInput, UI.el('span', { text: '分' })]),
+            UI.el('div', { class: 'unit-suffix' }, [secInput, UI.el('span', { text: '秒' })])
+          ]),
+          UI.el('div', { class: 'hint', text:
+            '例）22分30秒 →「22」と「30」。未入力でも記録できますが、入力するとペース補正とベストペースの判定に使われます（基準 ' +
+            U.fmt(data.settings.pace.basePaceMinPerKm, 0) + '分/km）。' })
+        ]));
+        return;
+      }
+
+      var meta = FIELD_META[f];
       var input = UI.el('input', {
         type: 'number', step: meta.step, min: '0', inputmode: meta.inputmode,
         placeholder: '0', value: initial,
         oninput: updatePreview
       });
-      inputs[f] = input;
+      inputs[f] = {
+        read: function () { return input.value; },
+        focus: function () { try { input.focus(); } catch (e) {} }
+      };
 
       var wrap = UI.el('div', { class: 'field' }, [
         UI.el('label', { text: meta.label }),
@@ -113,9 +155,6 @@
         }));
         wrap.appendChild(quick);
       }
-      if (f === 'durationMin') {
-        wrap.appendChild(UI.el('div', { class: 'hint', text: '未入力でもOK。入力するとペース補正がかかります（基準 ' + U.fmt(data.settings.pace.basePaceMinPerKm, 0) + '分/km）。' }));
-      }
       content.push(wrap);
     });
 
@@ -128,7 +167,7 @@
     content.push(preview);
 
     if (pb && !editing) {
-      content.push(UI.el('div', { class: 'hint', style: { marginTop: '8px' }, text: '現在のベスト: ' + pb.label + '（' + U.formatDateJa(pb.date) + '）' }));
+      content.push(UI.el('div', { class: 'hint', style: { marginTop: '8px' }, text: '現在のベスト: ' + UI.pbSummary(pb) }));
     }
 
     var sheet = UI.sheet({
@@ -153,15 +192,16 @@
 
     function collect() {
       var obj = {};
-      fields.forEach(function (f) { obj[f] = inputs[f].value; });
+      fields.forEach(function (f) { obj[f] = inputs[f].read(); });
       return obj;
     }
 
     function updatePreview() {
       UI.clear(preview);
+      var raw = collect();
       var input = {};
       fields.forEach(function (f) {
-        var n = U.num(inputs[f].value, NaN);
+        var n = U.num(raw[f], NaN);
         if (isFinite(n) && n > 0) input[f] = n;
       });
       var v = C.validateInput(master, input);
@@ -197,10 +237,11 @@
         rows.push(UI.kv('ストリークボーナス', '+' + Math.round(built.expBreakdown.streakRate * 100) + '%'));
       }
       if (built.isPersonalBest) {
-        rows.push(UI.kv('PBボーナス', '<span style="color:var(--gold)">+' + Math.round(built.expBreakdown.pbRate * 100) + '%  🎉</span>'));
+        var hitNames = (built.expBreakdown.pbHits || []).map(function (h) { return h.label; }).join('・');
+        rows.push(UI.kv('PBボーナス', '<span style="color:var(--gold)">+' + Math.round(built.expBreakdown.pbRate * 100) + '%  🎉 ' + U.escapeHtml(hitNames) + '</span>'));
       }
       if (built.expBreakdown.paceFactor && built.expBreakdown.pace) {
-        rows.push(UI.kv('ペース', U.fmt(built.expBreakdown.pace, 2) + ' 分/km（補正 ×' + U.fmt(built.expBreakdown.paceFactor, 2) + '）'));
+        rows.push(UI.kv('ペース', C.formatPace(built.expBreakdown.pace) + '（補正 ×' + U.fmt(built.expBreakdown.paceFactor, 2) + '）'));
       }
       var growth = ODL.STATS.filter(function (s) { return built.statGrowth[s] > 0; })
         .map(function (s) { return s + ' +' + U.fmt(built.statGrowth[s], 2); }).join('  ');
@@ -273,7 +314,14 @@
     }
 
     if (rec.isPersonalBest) {
-      box.appendChild(UI.el('div', { class: 'banner pb', text: '🎉 PERSONAL BEST!' }));
+      var hits = rec.expBreakdown && rec.expBreakdown.pbHits ? rec.expBreakdown.pbHits : [];
+      box.appendChild(UI.el('div', { class: 'banner pb' }, [
+        UI.el('div', { text: '🎉 PERSONAL BEST!' }),
+        hits.length ? UI.el('div', {
+          style: { fontSize: '12px', fontWeight: '700', marginTop: '4px', letterSpacing: '0' },
+          text: hits.map(function (h) { return h.label + ' ' + h.text; }).join('　/　')
+        }) : null
+      ]));
     }
     if (res.levelUp) {
       box.appendChild(UI.el('div', { class: 'banner lvup', text: '⬆ LEVEL UP!  Lv.' + res.levelBefore + ' → Lv.' + res.levelAfter }));

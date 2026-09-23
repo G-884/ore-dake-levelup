@@ -200,7 +200,7 @@
     if (bd.base !== undefined) rows.push(UI.kv('　内訳: 基本', U.fmt(bd.base, 1)));
     if (bd.streakRate) rows.push(UI.kv('　内訳: ストリーク', '+' + Math.round(bd.streakRate * 100) + '%（' + bd.streakDays + '日）'));
     if (bd.pbRate) rows.push(UI.kv('　内訳: PB', '+' + Math.round(bd.pbRate * 100) + '%'));
-    if (bd.paceFactor && bd.pace) rows.push(UI.kv('　ペース', U.fmt(bd.pace, 2) + ' 分/km ×' + U.fmt(bd.paceFactor, 2)));
+    if (bd.paceFactor && bd.pace) rows.push(UI.kv('ペース', C.formatPace(bd.pace) + '（補正 ×' + U.fmt(bd.paceFactor, 2) + '）'));
 
     var growth = ODL.STATS.filter(function (s) { return record.statGrowth[s] > 0; });
     if (growth.length) {
@@ -208,7 +208,13 @@
         return '<span style="color:' + ODL.STAT_COLORS[s] + '">' + s + ' +' + U.fmt(record.statGrowth[s], 3) + '</span>';
       }).join('　')));
     }
-    if (record.isPersonalBest) rows.push(UI.kv('パーソナルベスト', '<span style="color:var(--gold)">🎉 更新記録</span>'));
+    if (record.isPersonalBest) {
+      var hits = (record.expBreakdown && record.expBreakdown.pbHits) || [];
+      var hitText = hits.length
+        ? hits.map(function (h) { return h.label + ' ' + h.text; }).join('　/　')
+        : '更新記録';
+      rows.push(UI.kv('パーソナルベスト', '<span style="color:var(--gold)">🎉 ' + U.escapeHtml(hitText) + '</span>'));
+    }
     if (record.note) rows.push(UI.kv('メモ', U.escapeHtml(record.note)));
     rows.push(UI.kv('記録ID', '<span style="font-size:10px;color:var(--text-3)">' + U.escapeHtml(record.id) + '</span>'));
 

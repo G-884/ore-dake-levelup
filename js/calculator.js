@@ -262,31 +262,129 @@
 
   /* ---------------------------------------------------------------------
    * パーソナルベスト
-   *   1回の記録の「代表値」で比較する。
-   *   reps → 回数 / weight_reps → 重量×回数 / minutes → 分 / distance_time → km
+   *
+   * 種目ごとに「更新されうる指標」を複数持てるようにしてある。
+   * 例えばランニングは、距離を伸ばしたときだけでなく、
+   * 同じ距離を速く走ったときにもPBになってほしいので、
+   *   ・最長距離（大きいほど良い）
+   *   ・ベストペース（小さいほど良い）
+   * の2つを見る。
+   *
+   * ペースの比較対象は「その記録と同じか、それ以上の距離の記録」だけ。
+   * こうすると 3km の全力走のペースが 5km のPBを塞いでしまう、ということが起きない。
    * ------------------------------------------------------------------- */
-  C.pbValue = function (master, input) {
+  C.pbMetrics = function (master) {
     switch (master.inputType) {
-      case 'reps':        return U.num(input.reps, 0);
-      case 'weight_reps': return U.num(input.weight, 0) * U.num(input.reps, 0);
-      case 'minutes':     return U.num(input.minutes, 0);
-      case 'distance_time': return U.num(input.distance, 0);
-      default:            return 0;
+      case 'distance_time':
+        return [
+          { key: 'distance', label: '最長距離', direction: 'max', primary: true },
+          { key: 'pace',     label: 'ベストペース', direction: 'min', primary: false }
+        ];
+      case 'weight_reps':
+        return [{ key: 'volume', label: '最高記録', direction: 'max', primary: true }];
+      case 'minutes':
+        return [{ key: 'minutes', label: '最長時間', direction: 'max', primary: true }];
+      default:
+        return [{ key: 'reps', label: '最高回数', direction: 'max', primary: true }];
     }
   };
 
-  C.pbLabel = function (master, record) {
-    var input = record.input || {};
-    switch (master.inputType) {
-      case 'weight_reps':
-        return U.fmt(U.num(input.weight, 0), 1) + 'kg × ' + U.fmtInt(input.reps) + '回';
-      case 'distance_time':
-        return U.fmt(U.num(input.distance, 0), 2) + 'km';
-      case 'minutes':
-        return U.fmtInt(input.minutes) + '分';
-      default:
-        return U.fmtInt(input.reps) + '回';
+  C.primaryPbMetric = function (master) {
+    var list = C.pbMetrics(master);
+    for (var i = 0; i < list.length; i++) if (list[i].primary) return list[i];
+    return list[0];
+  };
+
+  /* 指標の数値。計算できないときは null（比較対象から外れる） */
+  C.pbMetricValue = function (master, input, key) {
+    input = input || {};
+    switch (key) {
+      case 'distance': {
+        var d = U.num(input.distance, 0);
+        return d > 0 ? d : null;
+      }
+      case 'pace': {
+        var dd = U.num(input.distance, 0), t = U.num(input.durationMin, 0);
+        return (dd > 0 && t > 0) ? t / dd : null;
+      }
+      case 'volume': {
+        var w = U.num(input.weight, 0), r = U.num(input.reps, 0);
+        return (w > 0 && r > 0) ? w * r : null;
+      }
+      case 'minutes': {
+        var m = U.num(input.minutes, 0);
+        return m > 0 ? m : null;
+      }
+      case 'reps': {
+        var rr = U.num(input.reps, 0);
+        return rr > 0 ? rr : null;
+      }
+      default: return null;
     }
+  };
+
+  C.pbMetricText = function (master, input, key) {
+    input = input || {};
+    switch (key) {
+      case 'distance': return U.fmt(U.num(input.distance, 0), 2) + 'km';
+      case 'pace':     return C.formatPace(U.num(input.durationMin, 0) / Math.max(U.num(input.distance, 0), 1e-9));
+      case 'volume':   return U.fmt(U.num(input.weight, 0), 1) + 'kg × ' + U.fmtInt(input.reps) + '回';
+      case 'minutes':  return U.fmtInt(input.minutes) + '分';
+      default:         return U.fmtInt(input.reps) + '回';
+    }
+  };
+
+  /* 代表指標の値（履歴の value / 集計で使う） */
+  C.pbValue = function (master, input) {
+    var v = C.pbMetricValue(master, input, C.primaryPbMetric(master).key);
+    return v === null ? 0 : v;
+  };
+
+  C.pbLabel = function (master, record) {
+    return C.pbMetricText(master, record.input || {}, C.primaryPbMetric(master).key);
+  };
+
+  /* PB判定。過去の記録（同一種目・この記録より前）と突き合わせる。
+     同値では更新扱いにしない。 */
+  C.evaluatePersonalBest = function (master, input, priorRecords, settings) {
+    var hits = [];
+    if (!settings || !settings.pb || !settings.pb.enabled) return { isPb: false, hits: hits };
+    var prior = priorRecords || [];
+
+    C.pbMetrics(master).forEach(function (def) {
+      var value = C.pbMetricValue(master, input, def.key);
+      if (value === null) return;
+
+      var best = null;
+
+      if (def.key === 'pace') {
+        /* 同じか、それ以上の距離の記録だけを比較対象にする */
+        var dist = U.num(input.distance, 0);
+        prior.forEach(function (r) {
+          if (U.num(r.input && r.input.distance, 0) + 1e-9 < dist) return;
+          var p = C.pbMetricValue(master, r.input, 'pace');
+          if (p === null) return;
+          if (best === null || p < best) best = p;
+        });
+        /* 比較対象がない＝この距離は初めて。距離のほうでPB判定されるのでここでは出さない */
+        if (best === null) return;
+        if (value < best - 1e-9) {
+          hits.push({ key: def.key, label: def.label, text: C.pbMetricText(master, input, def.key), value: value, previous: best });
+        }
+        return;
+      }
+
+      prior.forEach(function (r) {
+        var pv = C.pbMetricValue(master, r.input, def.key);
+        if (pv === null) return;
+        if (best === null || pv > best) best = pv;
+      });
+      if (best === null || value > best + 1e-9) {
+        hits.push({ key: def.key, label: def.label, text: C.pbMetricText(master, input, def.key), value: value, previous: best });
+      }
+    });
+
+    return { isPb: hits.length > 0, hits: hits };
   };
 
   /* 記録の代表表示値（履歴などで使う） */
@@ -313,17 +411,30 @@
     var h = Math.floor(total / 3600);
     var m = Math.floor((total % 3600) / 60);
     var s = total % 60;
-    if (h > 0) return h + '時間' + m + '分';
+    if (h > 0) return h + '時間' + m + '分' + (s > 0 ? s + '秒' : '');
     if (s > 0) return m + '分' + s + '秒';
     return m + '分';
   };
 
-  /* PB判定（同値では更新扱いにしない） */
-  C.isNewPersonalBest = function (master, input, currentPb) {
-    var v = C.pbValue(master, input);
-    if (v <= 0) return false;
-    if (!currentPb) return true;
-    return v > U.num(currentPb.value, 0) + 1e-9;
+  /* ペース（分/km）を 5:42 /km の形にする */
+  C.formatPace = function (minPerKm) {
+    var v = U.num(minPerKm, 0);
+    if (!isFinite(v) || v <= 0) return '—';
+    var total = Math.round(v * 60);
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return m + ':' + U.pad2(s) + ' /km';
+  };
+
+  /* 分（小数）を 分・秒 に分解する（入力欄用） */
+  C.splitMinutes = function (minutes) {
+    var total = Math.round(U.num(minutes, 0) * 60);
+    return { minutes: Math.floor(total / 60), seconds: total % 60 };
+  };
+
+  /* 分・秒 を分（小数）にまとめる */
+  C.joinMinutes = function (min, sec) {
+    return U.round(U.num(min, 0) + U.num(sec, 0) / 60, 6);
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
